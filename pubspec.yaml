@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  clerk_auth: 0.0.18-beta
+  clerk_flutter: 0.0.18-beta
   cupertino_icons: ^1.0.8
   flutter_secure_storage: ^9.2.4
   http: ^1.2.2

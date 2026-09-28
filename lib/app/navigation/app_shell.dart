@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
+typedef SignOutCallback = Future<void> Function();
+
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    super.key,
+    this.customerDisplayName,
+    this.onSignOut,
+  });
+
+  final String? customerDisplayName;
+  final SignOutCallback? onSignOut;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -9,6 +18,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   var _index = 0;
+  var _signingOut = false;
 
   static const _destinations = <_AppDestination>[
     _AppDestination(
@@ -48,12 +58,29 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
+  Future<void> _signOut() async {
+    if (_signingOut || widget.onSignOut == null) return;
+    setState(() => _signingOut = true);
+    try {
+      await widget.onSignOut!();
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final destination = _destinations[_index];
     return Scaffold(
       appBar: AppBar(title: Text(destination.title)),
-      body: SafeArea(child: _SectionLanding(destination: destination)),
+      body: SafeArea(
+        child: _SectionLanding(
+          destination: destination,
+          customerDisplayName: widget.customerDisplayName,
+          signingOut: _signingOut,
+          onSignOut: widget.onSignOut == null ? null : _signOut,
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
@@ -71,12 +98,29 @@ class _AppShellState extends State<AppShell> {
 }
 
 class _SectionLanding extends StatelessWidget {
-  const _SectionLanding({required this.destination});
+  const _SectionLanding({
+    required this.destination,
+    required this.customerDisplayName,
+    required this.signingOut,
+    required this.onSignOut,
+  });
+
   final _AppDestination destination;
+  final String? customerDisplayName;
+  final bool signingOut;
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final displayName = customerDisplayName?.trim();
+    final message =
+        destination.label == 'Trang chủ' &&
+            displayName != null &&
+            displayName.isNotEmpty
+        ? 'Chào mừng $displayName đến hệ thống đặt hàng Hưng Phát.'
+        : destination.message;
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -103,12 +147,20 @@ class _SectionLanding extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                destination.message,
+                message,
                 style: textTheme.bodyLarge?.copyWith(
                   color: const Color(0xFF5E6675),
                   height: 1.45,
                 ),
               ),
+              if (destination.label == 'Tài khoản' && onSignOut != null) ...[
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: signingOut ? null : onSignOut,
+                  icon: const Icon(Icons.logout_rounded),
+                  label: Text(signingOut ? 'Đang đăng xuất...' : 'Đăng xuất'),
+                ),
+              ],
             ],
           ),
         ),
@@ -125,6 +177,7 @@ class _AppDestination {
     required this.title,
     required this.message,
   });
+
   final String label;
   final IconData icon;
   final IconData selectedIcon;

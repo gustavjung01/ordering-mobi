@@ -29,10 +29,23 @@ Issue #1 là nguồn bàn giao bootstrap và release contract.
 
 ## Chạy local
 
+Lấy dependencies:
+
 ~~~powershell
 flutter pub get
-flutter run
 ~~~
+
+Auth/API foundation dùng đúng public Clerk publishable key và public origin của Customer Ordering PWA. Mobile gọi Customer Portal BFF tại `/api/customer-portal/**`; không gọi thẳng API Công Ty và không chứa server token.
+
+~~~powershell
+flutter run -d emulator-5556 `
+  --dart-define=ORDERING_CLERK_PUBLISHABLE_KEY=pk_test_REPLACE_WITH_PUBLIC_KEY `
+  --dart-define=ORDERING_CUSTOMER_PORTAL_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST
+~~~
+
+`ORDERING_CLERK_PUBLISHABLE_KEY` là publishable key dành cho client. Không đưa `CLERK_SECRET_KEY`, database credential, token máy chủ hoặc API key nội bộ vào source, APK hay lệnh được lưu trong repo.
+
+Trạng thái Clerk được lưu qua `flutter_secure_storage`. Ứng dụng không duy trì một bản raw access token riêng; token gửi Customer Portal được lấy từ phiên Clerk đang hoạt động để tránh hai nguồn session.
 
 Kiểm tra trước khi merge:
 
