@@ -10,7 +10,7 @@ void main() {
         uuid: uuid,
       );
 
-      expect(key, 'submit-customer-order-' + uuid);
+      expect(key, 'submit-customer-order-$uuid');
       expect(CanonicalIdempotencyKey.isValid(key), isTrue);
       expect(key.length, lessThanOrEqualTo(128));
     });

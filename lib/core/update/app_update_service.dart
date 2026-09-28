@@ -186,7 +186,7 @@ class AppUpdateService {
       );
     }
 
-    final base = Uri.tryParse(baseUrl.endsWith('/') ? baseUrl : baseUrl + '/');
+    final base = Uri.tryParse(baseUrl.endsWith('/') ? baseUrl : '$baseUrl/');
     if (base == null ||
         base.scheme != 'https' ||
         base.host.isEmpty ||
@@ -229,7 +229,7 @@ class AppUpdateService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AppUpdateFailure(
-        code: 'UPDATE_HTTP_' + response.statusCode.toString(),
+        code: 'UPDATE_HTTP_${response.statusCode}',
         message: response.statusCode == 404
             ? 'Chưa có bản cập nhật được phát hành.'
             : 'Không tải được thông tin cập nhật.',

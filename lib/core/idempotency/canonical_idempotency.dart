@@ -32,7 +32,7 @@ abstract final class CanonicalIdempotencyKey {
     if (!_uuidPattern.hasMatch(generatedUuid)) {
       throw ArgumentError('idempotency_uuid_invalid');
     }
-    final key = normalizeOperation(operation) + '-' + generatedUuid;
+    final key = '${normalizeOperation(operation)}-$generatedUuid';
     if (!_keyPattern.hasMatch(key)) {
       throw StateError('idempotency_key_generation_failed');
     }

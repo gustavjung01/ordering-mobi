@@ -10,14 +10,13 @@ typedef CustomerTokenProvider = Future<String?> Function();
 class CustomerPortalClient {
   CustomerPortalClient({
     required this.baseUri,
-    required CustomerTokenProvider tokenProvider,
+    required this.tokenProvider,
     http.Client? client,
     this.timeout = const Duration(seconds: 12),
-  }) : _tokenProvider = tokenProvider,
-       _client = client ?? http.Client();
+  }) : _client = client ?? http.Client();
 
   final Uri baseUri;
-  final CustomerTokenProvider _tokenProvider;
+  final CustomerTokenProvider tokenProvider;
   final http.Client _client;
   final Duration timeout;
 
@@ -36,7 +35,7 @@ class CustomerPortalClient {
       );
     }
 
-    final token = (await _tokenProvider())?.trim();
+    final token = (await tokenProvider())?.trim();
     if (token == null || token.isEmpty) {
       throw const ApiFailure(
         code: 'AUTH_REQUIRED',
@@ -47,7 +46,7 @@ class CustomerPortalClient {
     final uri = baseUri.resolve(path);
     final request = http.Request(method.toUpperCase(), uri)
       ..headers['Accept'] = 'application/json'
-      ..headers['Authorization'] = 'Bearer ' + token;
+      ..headers['Authorization'] = 'Bearer $token';
 
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
