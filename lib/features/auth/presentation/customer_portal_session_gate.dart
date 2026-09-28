@@ -6,6 +6,9 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_api.dart';
 import '../../../core/network/customer_portal_client.dart';
 import '../../../core/network/customer_portal_models.dart';
+import '../../../core/session/session_store.dart';
+import '../../../core/storage/ordering_local_store.dart';
+import '../../ordering/data/customer_ordering_repository.dart';
 
 class CustomerPortalSessionGate extends StatefulWidget {
   const CustomerPortalSessionGate({
@@ -26,6 +29,7 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
   late final CustomerPortalClient _portalClient;
   late final CustomerPortalApi _portalApi;
   late Future<CustomerProfile> _profileFuture;
+  CustomerOrderingRepository? _orderingRepository;
 
   @override
   void initState() {
@@ -35,18 +39,44 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
       tokenProvider: widget.authClient.getToken,
     );
     _portalApi = CustomerPortalApi(_portalClient);
-    _profileFuture = _portalApi.getProfile();
+    _profileFuture = _loadSession();
   }
 
   @override
   void dispose() {
+    _orderingRepository?.dispose();
     _portalClient.close();
     super.dispose();
   }
 
+  Future<CustomerProfile> _loadSession() async {
+    final profileFuture = _portalApi.getProfile();
+    final sessionFuture = widget.authClient.currentSession();
+    final profile = await profileFuture;
+    final session = await sessionFuture;
+    if (session == null) {
+      throw const ApiFailure(
+        code: 'AUTH_REQUIRED',
+        message: 'Vui lòng đăng nhập lại để tiếp tục.',
+        statusCode: 401,
+      );
+    }
+
+    _orderingRepository?.dispose();
+    final repository = CustomerOrderingRepository(
+      remote: _portalApi,
+      localStore: SharedPreferencesOrderingLocalStore(),
+      secureStore: FlutterSecureStringStore(),
+      userId: session.userId,
+    );
+    await repository.initialize();
+    _orderingRepository = repository;
+    return profile;
+  }
+
   void _retry() {
     setState(() {
-      _profileFuture = _portalApi.getProfile();
+      _profileFuture = _loadSession();
     });
   }
 
@@ -63,8 +93,10 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
           );
         }
 
-        if (snapshot.hasData) {
+        if (snapshot.hasData && _orderingRepository != null) {
           return AppShell(
+            profile: snapshot.data!,
+            repository: _orderingRepository!,
             customerDisplayName: snapshot.data!.displayName,
             onSignOut: widget.authClient.signOut,
           );
