@@ -89,11 +89,13 @@ void main() {
 
     await expectLater(
       client.requestData('GET', 'me'),
-      throwsA(isA<ApiFailure>().having(
-        (failure) => failure.code,
-        'code',
-        'AUTH_REQUIRED',
-      )),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.code,
+          'code',
+          'AUTH_REQUIRED',
+        ),
+      ),
     );
     expect(requested, isFalse);
     client.close();
