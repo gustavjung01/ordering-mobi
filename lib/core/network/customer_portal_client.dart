@@ -34,8 +34,19 @@ class CustomerPortalClient {
         message: 'Địa chỉ kết nối hệ thống chưa hợp lệ.',
       );
     }
+    if (path.startsWith('/')) {
+      throw const ApiFailure(
+        code: 'API_PATH_INVALID',
+        message: 'Đường dẫn kết nối hệ thống chưa hợp lệ.',
+      );
+    }
 
-    final token = (await tokenProvider())?.trim();
+    String? token;
+    try {
+      token = (await tokenProvider())?.trim();
+    } on Object {
+      token = null;
+    }
     if (token == null || token.isEmpty) {
       throw const ApiFailure(
         code: 'AUTH_REQUIRED',
@@ -84,11 +95,12 @@ class CustomerPortalClient {
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final object = decoded is Map ? decoded : const <String, dynamic>{};
-      final code = (object['code'] ?? object['error'] ?? 'API_ERROR')
-          .toString();
-      final message = (object['message'] ?? 'Không xử lý được yêu cầu.')
-          .toString();
+      final object = _asStringMap(decoded);
+      final error = _asStringMap(object['error']);
+      final code = (error['code'] ?? object['code'] ?? 'API_ERROR').toString();
+      final message =
+          (error['message'] ?? object['message'] ?? 'Không xử lý được yêu cầu.')
+              .toString();
       final requestId =
           (object['requestId'] ?? response.headers['x-request-id'])?.toString();
 
@@ -97,7 +109,7 @@ class CustomerPortalClient {
         message: message,
         statusCode: response.statusCode,
         requestId: requestId,
-        retryable: response.statusCode >= 500,
+        retryable: error['retryable'] == true || response.statusCode >= 500,
       );
     }
 
@@ -111,6 +123,37 @@ class CustomerPortalClient {
       code: 'API_RESPONSE_INVALID',
       message: 'Dữ liệu trả về chưa hợp lệ.',
     );
+  }
+
+  Future<Map<String, dynamic>> requestData(
+    String method,
+    String path, {
+    Object? body,
+    String? idempotencyKey,
+  }) async {
+    final envelope = await requestJson(
+      method,
+      path,
+      body: body,
+      idempotencyKey: idempotencyKey,
+    );
+    final data = envelope['data'];
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) {
+      return data.map((key, value) => MapEntry(key.toString(), value));
+    }
+    throw const ApiFailure(
+      code: 'API_RESPONSE_INVALID',
+      message: 'Dữ liệu trả về chưa hợp lệ.',
+    );
+  }
+
+  static Map<String, dynamic> _asStringMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map((key, item) => MapEntry(key.toString(), item));
+    }
+    return const <String, dynamic>{};
   }
 
   void close() => _client.close();
