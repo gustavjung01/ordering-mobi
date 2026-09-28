@@ -1,0 +1,57 @@
+name: Flutter CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter 3.47.2
+        shell: bash
+        run: |
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Flutter
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: |
+          dart format lib test
+          git diff --exit-code -- lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Compile release APK
+        env:
+          ORDERING_CI_RELEASE_VALIDATION: 'true'
+        run: flutter build apk --release --dart-define=ORDERING_UPDATE_BASE_URL=https://example.invalid/ordering
+
+      - name: Compile release AAB
+        env:
+          ORDERING_CI_RELEASE_VALIDATION: 'true'
+        run: flutter build appbundle --release --dart-define=ORDERING_UPDATE_BASE_URL=https://example.invalid/ordering
