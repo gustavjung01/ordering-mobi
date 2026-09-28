@@ -13,8 +13,8 @@ class CustomerPortalClient {
     required CustomerTokenProvider tokenProvider,
     http.Client? client,
     this.timeout = const Duration(seconds: 12),
-  })  : _tokenProvider = tokenProvider,
-        _client = client ?? http.Client();
+  }) : _tokenProvider = tokenProvider,
+       _client = client ?? http.Client();
 
   final Uri baseUri;
   final CustomerTokenProvider _tokenProvider;
@@ -27,7 +27,9 @@ class CustomerPortalClient {
     Object? body,
     String? idempotencyKey,
   }) async {
-    if (!baseUri.hasScheme || baseUri.scheme != 'https' || baseUri.host.isEmpty) {
+    if (!baseUri.hasScheme ||
+        baseUri.scheme != 'https' ||
+        baseUri.host.isEmpty) {
       throw const ApiFailure(
         code: 'API_BASE_URL_INVALID',
         message: 'Địa chỉ kết nối hệ thống chưa hợp lệ.',
@@ -84,8 +86,10 @@ class CustomerPortalClient {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final object = decoded is Map ? decoded : const <String, dynamic>{};
-      final code = (object['code'] ?? object['error'] ?? 'API_ERROR').toString();
-      final message = (object['message'] ?? 'Không xử lý được yêu cầu.').toString();
+      final code = (object['code'] ?? object['error'] ?? 'API_ERROR')
+          .toString();
+      final message = (object['message'] ?? 'Không xử lý được yêu cầu.')
+          .toString();
       final requestId =
           (object['requestId'] ?? response.headers['x-request-id'])?.toString();
 

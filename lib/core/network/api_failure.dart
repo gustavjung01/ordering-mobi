@@ -14,5 +14,6 @@ class ApiFailure implements Exception {
   final bool retryable;
 
   @override
-  String toString() => 'ApiFailure(' + code + ', statusCode: ' + statusCode.toString() + ')';
+  String toString() =>
+      'ApiFailure(' + code + ', statusCode: ' + statusCode.toString() + ')';
 }

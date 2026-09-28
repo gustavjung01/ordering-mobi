@@ -114,7 +114,8 @@ class MethodChannelAppUpdatePlatform implements AppUpdatePlatform {
   @override
   Future<bool> supportsDirectInstall() async {
     try {
-      return await _channel.invokeMethod<bool>('supportsDirectInstall') ?? false;
+      return await _channel.invokeMethod<bool>('supportsDirectInstall') ??
+          false;
     } on PlatformException catch (error) {
       throw _platformFailure(error);
     }
@@ -160,11 +161,11 @@ class AppUpdateService {
     http.Client? client,
     AppUpdatePlatform? platform,
     this.timeout = const Duration(seconds: 12),
-  })  : baseUrl =
-            (baseUrl ?? const String.fromEnvironment('ORDERING_UPDATE_BASE_URL'))
-                .trim(),
-        _client = client ?? http.Client(),
-        platform = platform ?? const MethodChannelAppUpdatePlatform();
+  }) : baseUrl =
+           (baseUrl ?? const String.fromEnvironment('ORDERING_UPDATE_BASE_URL'))
+               .trim(),
+       _client = client ?? http.Client(),
+       platform = platform ?? const MethodChannelAppUpdatePlatform();
 
   final String baseUrl;
   final http.Client _client;
@@ -246,7 +247,10 @@ class AppUpdateService {
       );
     }
 
-    final release = AppReleaseManifest.fromJson(_object(decoded), baseUri: base);
+    final release = AppReleaseManifest.fromJson(
+      _object(decoded),
+      baseUri: base,
+    );
     return AppUpdateCheck(
       currentVersion: current,
       release: release,
