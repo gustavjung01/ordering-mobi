@@ -1,0 +1,88 @@
+name: Flutter CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'agent/**'
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter 3.47.2
+        shell: bash
+        run: |
+          git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Flutter
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        id: format
+        continue-on-error: true
+        run: |
+          dart format lib test
+          git diff --exit-code -- lib test
+
+      - name: Analyze
+        id: analyze
+        continue-on-error: true
+        run: flutter analyze
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: flutter test
+
+      - name: Build debug APK
+        id: debug_apk
+        continue-on-error: true
+        run: flutter build apk --debug
+
+      - name: Compile release APK
+        id: release_apk
+        continue-on-error: true
+        env:
+          ORDERING_CI_RELEASE_VALIDATION: 'true'
+        run: flutter build apk --release --dart-define=ORDERING_UPDATE_BASE_URL=https://example.invalid/ordering
+
+      - name: Compile release AAB
+        id: release_aab
+        continue-on-error: true
+        env:
+          ORDERING_CI_RELEASE_VALIDATION: 'true'
+        run: flutter build appbundle --release --dart-define=ORDERING_UPDATE_BASE_URL=https://example.invalid/ordering
+
+      - name: Final gate
+        if: always()
+        env:
+          FORMAT: ${{ steps.format.outcome }}
+          ANALYZE: ${{ steps.analyze.outcome }}
+          TEST: ${{ steps.test.outcome }}
+          DEBUG_APK: ${{ steps.debug_apk.outcome }}
+          RELEASE_APK: ${{ steps.release_apk.outcome }}
+          RELEASE_AAB: ${{ steps.release_aab.outcome }}
+        run: |
+          printf 'format=%s\nanalyze=%s\ntest=%s\ndebug_apk=%s\nrelease_apk=%s\nrelease_aab=%s\n' "$FORMAT" "$ANALYZE" "$TEST" "$DEBUG_APK" "$RELEASE_APK" "$RELEASE_AAB"
+          test "$FORMAT" = success
+          test "$ANALYZE" = success
+          test "$TEST" = success
+          test "$DEBUG_APK" = success
+          test "$RELEASE_APK" = success
+          test "$RELEASE_AAB" = success
