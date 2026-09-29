@@ -115,35 +115,39 @@ class CustomerOrderingRepository extends ChangeNotifier {
     final normalizedSearch = search?.trim().toLowerCase() ?? '';
     final normalizedCategory = categoryId?.trim() ?? '';
     final normalizedMode = purchaseMode?.trim().toLowerCase() ?? '';
-    final filtered = _catalogItems.where((item) {
-      if (normalizedCategory.isNotEmpty &&
-          item.categoryId != normalizedCategory &&
-          item.parentCategoryId != normalizedCategory) {
-        return false;
-      }
-      if (normalizedMode.isNotEmpty && item.purchaseMode != normalizedMode) {
-        return false;
-      }
-      if (normalizedSearch.isNotEmpty) {
-        final haystack = [
-          item.sku,
-          item.productCode ?? '',
-          item.name,
-          item.variantName,
-          item.categoryName ?? '',
-          item.parentCategoryName ?? '',
-          item.brandName ?? '',
-        ].join(' ').toLowerCase();
-        if (!haystack.contains(normalizedSearch)) return false;
-      }
-      return true;
-    }).toList(growable: false)
-      ..sort((left, right) {
-        final product = (left.productCode ?? left.sku).compareTo(
-          right.productCode ?? right.sku,
-        );
-        return product != 0 ? product : left.sku.compareTo(right.sku);
-      });
+    final filtered =
+        _catalogItems
+            .where((item) {
+              if (normalizedCategory.isNotEmpty &&
+                  item.categoryId != normalizedCategory &&
+                  item.parentCategoryId != normalizedCategory) {
+                return false;
+              }
+              if (normalizedMode.isNotEmpty &&
+                  item.purchaseMode != normalizedMode) {
+                return false;
+              }
+              if (normalizedSearch.isNotEmpty) {
+                final haystack = [
+                  item.sku,
+                  item.productCode ?? '',
+                  item.name,
+                  item.variantName,
+                  item.categoryName ?? '',
+                  item.parentCategoryName ?? '',
+                  item.brandName ?? '',
+                ].join(' ').toLowerCase();
+                if (!haystack.contains(normalizedSearch)) return false;
+              }
+              return true;
+            })
+            .toList(growable: false)
+          ..sort((left, right) {
+            final product = (left.productCode ?? left.sku).compareTo(
+              right.productCode ?? right.sku,
+            );
+            return product != 0 ? product : left.sku.compareTo(right.sku);
+          });
 
     final safeLimit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);
     final safeOffset = offset < 0 ? 0 : offset;
@@ -164,7 +168,9 @@ class CustomerOrderingRepository extends ChangeNotifier {
     );
   }
 
-  Future<List<CustomerCatalogItem>> listAllCatalog({bool refresh = false}) async {
+  Future<List<CustomerCatalogItem>> listAllCatalog({
+    bool refresh = false,
+  }) async {
     await _ensureCatalog(refresh: refresh);
     return List.unmodifiable(_catalogItems);
   }

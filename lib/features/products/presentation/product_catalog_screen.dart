@@ -156,11 +156,12 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       for (final group in buildCatalogProductGroups(_items, metadata))
         group.key: group,
     };
-    final groups = visibleByKey.keys
-        .map((key) => allGroups[key])
-        .whereType<CatalogProductGroup>()
-        .toList(growable: false)
-      ..sort((left, right) => left.name.compareTo(right.name));
+    final groups =
+        visibleByKey.keys
+            .map((key) => allGroups[key])
+            .whereType<CatalogProductGroup>()
+            .toList(growable: false)
+          ..sort((left, right) => left.name.compareTo(right.name));
     return groups;
   }
 
@@ -588,6 +589,11 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       );
     }
 
+    final filtered = _filteredItems(metadata);
+    final visibleByKey = <String, List<CustomerCatalogItem>>{};
+    for (final item in filtered) {
+      visibleByKey.putIfAbsent(metadata.groupKeyFor(item), () => []).add(item);
+    }
     final groups = _visibleGroups(metadata);
     final shownGroups = groups.take(_visibleGroupCount).toList(growable: false);
     _scheduleVisiblePriceHydration();
@@ -749,8 +755,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   group: group,
                   selected: selected,
                   metadata: metadata,
-                  retail: _modeItem(metadata, activeGroup, selected, 'retail'),
-                  caseItem: _modeItem(metadata, activeGroup, selected, 'case'),
+                  retail: _modeItem(metadata, group, selected, 'retail'),
+                  caseItem: _modeItem(metadata, group, selected, 'case'),
                   onOpen: () => _openGroup(group, selected),
                   onSelect: (item) {
                     setState(() => _selectedSkuByGroup[group.key] = item.sku);

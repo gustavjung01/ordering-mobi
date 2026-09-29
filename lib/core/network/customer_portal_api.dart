@@ -149,7 +149,6 @@ class CustomerPortalApi extends CustomerOrderingRemote {
     return List.unmodifiable(items);
   }
 
-
   @override
   Future<CustomerCatalogSync> syncCatalog({String? since}) async {
     final parameters = <String, String>{

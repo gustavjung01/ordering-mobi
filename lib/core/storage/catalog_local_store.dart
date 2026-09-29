@@ -12,9 +12,9 @@ class CatalogLocalSnapshot {
   });
 
   const CatalogLocalSnapshot.empty()
-      : cursor = null,
-        items = const [],
-        categories = const [];
+    : cursor = null,
+      items = const [],
+      categories = const [];
 
   final String? cursor;
   final List<CustomerCatalogItem> items;
