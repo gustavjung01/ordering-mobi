@@ -27,6 +27,23 @@ Issue #1 là nguồn bàn giao bootstrap và release contract.
 - Không WebView làm ứng dụng chính
 - Không database credential, server secret hoặc private API key trong APK
 
+## Runtime của installation Hưng Phát
+
+Ordering Mobile là app dành cho khách hàng cuối nên installation được cấu hình sẵn trong APK. Người dùng không nhập địa chỉ hệ thống.
+
+~~~text
+Ordering Mobile
+├── Clerk publishable key -> cấu hình public của installation
+├── Customer Portal API   -> https://40.233.83.234/api/customer-portal/**
+└── Hỏi Hưng Phát         -> https://sales.nguyenlieuhungphat.com/api/assistant/chat
+~~~
+
+Catalog, hồ sơ, đăng ký điểm bán và đơn hàng gọi trực tiếp Customer Portal API trên VPS Công Ty bằng Clerk bearer token. Mobile không kết nối PostgreSQL và không chứa `DATABASE_URL`, Clerk secret, token máy chủ hoặc API key nội bộ.
+
+Trợ lý giữ boundary riêng qua Customer Ordering BFF vì BFF sở hữu server-side AI token/context. Không đưa `ORDERING_AI_API_TOKEN` vào APK.
+
+Clerk publishable key là cấu hình công khai dành cho client. Backend Công Ty xác minh token theo Clerk issuer/JWKS; secret xác thực không nằm trong mobile.
+
 ## Chạy local
 
 Lấy dependencies:
@@ -35,15 +52,20 @@ Lấy dependencies:
 flutter pub get
 ~~~
 
-Auth/API foundation dùng đúng public Clerk publishable key và public origin của Customer Ordering PWA. Mobile gọi Customer Portal BFF tại `/api/customer-portal/**`; không gọi thẳng API Công Ty và không chứa server token.
+Installation Hưng Phát đã có cấu hình mặc định nên chạy thẳng:
+
+~~~powershell
+flutter run -d emulator-5556
+~~~
+
+Để build một installation khác từ cùng codebase, có thể override public runtime config:
 
 ~~~powershell
 flutter run -d emulator-5556 `
-  --dart-define=ORDERING_CLERK_PUBLISHABLE_KEY=pk_test_REPLACE_WITH_PUBLIC_KEY `
-  --dart-define=ORDERING_CUSTOMER_PORTAL_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST
+  --dart-define=ORDERING_CLERK_PUBLISHABLE_KEY=pk_live_REPLACE_WITH_PUBLIC_KEY `
+  --dart-define=ORDERING_CUSTOMER_PORTAL_ORIGIN=https://REPLACE_WITH_COMPANY_API_HOST `
+  --dart-define=ORDERING_ASSISTANT_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST
 ~~~
-
-`ORDERING_CLERK_PUBLISHABLE_KEY` là publishable key dành cho client. Không đưa `CLERK_SECRET_KEY`, database credential, token máy chủ hoặc API key nội bộ vào source, APK hay lệnh được lưu trong repo.
 
 Trạng thái Clerk được lưu qua `flutter_secure_storage`. Ứng dụng không duy trì một bản raw access token riêng; token gửi Customer Portal được lấy từ phiên Clerk đang hoạt động để tránh hai nguồn session.
 

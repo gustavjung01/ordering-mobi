@@ -9,9 +9,11 @@ class CustomerAuthGate extends StatelessWidget {
   const CustomerAuthGate({
     super.key,
     required this.customerPortalBaseUri,
+    this.assistantEndpoint,
   });
 
   final Uri customerPortalBaseUri;
+  final Uri? assistantEndpoint;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +23,7 @@ class CustomerAuthGate extends StatelessWidget {
         return CustomerPortalSessionGate(
           authClient: authClient,
           baseUri: customerPortalBaseUri,
+          assistantEndpoint: assistantEndpoint,
         );
       },
       signedOutBuilder: (context, authState) {
