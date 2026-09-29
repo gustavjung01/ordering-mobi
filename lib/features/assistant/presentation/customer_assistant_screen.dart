@@ -28,8 +28,7 @@ class _CustomerAssistantScreenState extends State<CustomerAssistantScreen> {
   final _messages = <_AssistantMessage>[
     const _AssistantMessage(
       role: _AssistantRole.assistant,
-      text:
-          'Chào Quý khách. Tôi có thể tư vấn sản phẩm, cách sử dụng và hướng dẫn thao tác trên ứng dụng. Việc chọn hàng và gửi đơn vẫn do Quý khách tự xác nhận.',
+      text: 'Chào Quý khách. Tôi có thể tư vấn sản phẩm, cách sử dụng và hướng dẫn thao tác trên ứng dụng. Việc chọn hàng và gửi đơn vẫn do Quý khách tự xác nhận.',
     ),
   ];
   late final String _sessionId = const Uuid().v4();
@@ -139,9 +138,7 @@ class _CustomerAssistantScreenState extends State<CustomerAssistantScreen> {
                       for (final suggestion in _suggestions)
                         ActionChip(
                           label: Text(suggestion),
-                          onPressed: _sending
-                              ? null
-                              : () => _send(suggestion),
+                          onPressed: _sending ? null : () => _send(suggestion),
                         ),
                     ],
                   ),

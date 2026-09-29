@@ -40,14 +40,26 @@ class AssistantReply {
 }
 
 class CustomerAssistantApi {
-  CustomerAssistantApi({
+  factory CustomerAssistantApi({
     required Uri endpoint,
     required CustomerTokenProvider tokenProvider,
     http.Client? client,
-    this.timeout = const Duration(seconds: 35),
-  }) : _endpoint = endpoint,
-       _tokenProvider = tokenProvider,
-       _client = client ?? http.Client();
+    Duration timeout = const Duration(seconds: 35),
+  }) {
+    return CustomerAssistantApi._(
+      endpoint,
+      tokenProvider,
+      client ?? http.Client(),
+      timeout,
+    );
+  }
+
+  CustomerAssistantApi._(
+    this._endpoint,
+    this._tokenProvider,
+    this._client,
+    this.timeout,
+  );
 
   final Uri _endpoint;
   final CustomerTokenProvider _tokenProvider;

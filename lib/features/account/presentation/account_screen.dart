@@ -282,8 +282,7 @@ class _AccountScreenState extends State<AccountScreen> {
         final address = profile?.address;
         if (profile == null || address == null) {
           setState(() {
-            _error =
-                'Điểm bán chưa có địa chỉ đang hoạt động. Vui lòng liên hệ Hưng Phát.';
+            _error = 'Điểm bán chưa có địa chỉ đang hoạt động. Vui lòng liên hệ Hưng Phát.';
           });
           return;
         }
@@ -325,13 +324,11 @@ class _AccountScreenState extends State<AccountScreen> {
       }
     } on ApiFailure catch (error) {
       if (!mounted) return;
-      if (error.statusCode == 409 &&
-          error.code != 'IDEMPOTENCY_IN_PROGRESS') {
+      if (error.statusCode == 409 && error.code != 'IDEMPOTENCY_IN_PROGRESS') {
         await _refresh();
         if (!mounted) return;
         setState(() {
-          _error =
-              'Dữ liệu Công Ty đã thay đổi. Hãy kiểm tra dữ liệu mới rồi gửi lại.';
+          _error = 'Dữ liệu Công Ty đã thay đổi. Hãy kiểm tra dữ liệu mới rồi gửi lại.';
         });
       } else {
         setState(() {
@@ -467,7 +464,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       Chip(label: Text(copy.badge)),
                     ],
                   ),
-                  if (widget.lifecycle.registration?.reviewReason?.trim().isNotEmpty ==
+                  if (widget.lifecycle.registration?.reviewReason
+                          ?.trim()
+                          .isNotEmpty ==
                       true) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -703,8 +702,7 @@ class _StateCopy {
 _StateCopy _stateCopy(String state) => switch (state) {
   PortalLifecycleStates.unregistered => const _StateCopy(
     title: 'Chưa đăng ký điểm bán',
-    description:
-        'Gửi thông tin điểm bán để Hưng Phát xác minh trước khi mở danh mục và đặt hàng.',
+    description: 'Gửi thông tin điểm bán để Hưng Phát xác minh trước khi mở danh mục và đặt hàng.',
     badge: 'Chưa đăng ký',
   ),
   PortalLifecycleStates.submitted => const _StateCopy(
@@ -719,8 +717,7 @@ _StateCopy _stateCopy(String state) => switch (state) {
   ),
   PortalLifecycleStates.needMoreInfo => const _StateCopy(
     title: 'Cần bổ sung thông tin',
-    description:
-        'Cập nhật lại thông tin theo ghi chú xử lý rồi gửi lại.',
+    description: 'Cập nhật lại thông tin theo ghi chú xử lý rồi gửi lại.',
     badge: 'Cần bổ sung',
   ),
   PortalLifecycleStates.approved ||
@@ -733,14 +730,12 @@ _StateCopy _stateCopy(String state) => switch (state) {
   ),
   PortalLifecycleStates.activeCustomer => const _StateCopy(
     title: 'Điểm bán đã liên thông Công Ty',
-    description:
-        'Danh mục và đặt hàng đã được mở. Thông tin bên dưới là dữ liệu chính thức của Công Ty.',
+    description: 'Danh mục và đặt hàng đã được mở. Thông tin bên dưới là dữ liệu chính thức của Công Ty.',
     badge: 'Đã kích hoạt',
   ),
   PortalLifecycleStates.rejected => const _StateCopy(
     title: 'Đăng ký chưa được chấp thuận',
-    description:
-        'Xem ghi chú xử lý và liên hệ Hưng Phát nếu cần hỗ trợ.',
+    description: 'Xem ghi chú xử lý và liên hệ Hưng Phát nếu cần hỗ trợ.',
     badge: 'Chưa chấp thuận',
   ),
   PortalLifecycleStates.cancelled => const _StateCopy(
@@ -751,8 +746,7 @@ _StateCopy _stateCopy(String state) => switch (state) {
   ),
   PortalLifecycleStates.suspended => const _StateCopy(
     title: 'Liên kết điểm bán tạm khóa',
-    description:
-        'Tài khoản hoặc liên kết điểm bán hiện không sử dụng được. Vui lòng liên hệ Hưng Phát.',
+    description: 'Tài khoản hoặc liên kết điểm bán hiện không sử dụng được. Vui lòng liên hệ Hưng Phát.',
     badge: 'Tạm khóa',
   ),
   _ => const _StateCopy(

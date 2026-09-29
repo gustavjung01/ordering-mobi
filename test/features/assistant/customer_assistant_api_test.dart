@@ -59,8 +59,7 @@ void main() {
           jsonEncode({
             'ok': false,
             'code': 'AI_CREDIT_LIMIT_REACHED',
-            'error':
-                'Hạn mức hỗ trợ AI đã sử dụng hết. Các chức năng đặt hàng khác vẫn hoạt động bình thường.',
+            'error': 'Hạn mức hỗ trợ AI đã sử dụng hết. Các chức năng đặt hàng khác vẫn hoạt động bình thường.',
           }),
           429,
           headers: {'content-type': 'application/json'},

@@ -31,50 +31,53 @@ void main() {
     client.close();
   });
 
-  test('submits registration with canonical mutation header passthrough', () async {
-    late http.Request captured;
-    final client = CustomerPortalClient(
-      baseUri: Uri.parse('https://ordering.example/api/customer-portal/'),
-      tokenProvider: () async => 'clerk-token',
-      client: MockClient((request) async {
-        captured = request;
-        return _lifecycleResponse(state: PortalLifecycleStates.submitted);
-      }),
-    );
-    final api = CustomerPortalAccountApi(client);
-    const input = PortalRegistrationInput(
-      name: 'Điểm bán Minh Anh',
-      phone: '0900000000',
-      businessType: 'Cửa hàng bán lẻ',
-      addressLine1: '125 Nguyễn Văn Linh',
-      ward: 'Phường Tân Phong',
-      province: 'Thành phố Hồ Chí Minh',
-    );
+  test(
+    'submits registration with canonical mutation header passthrough',
+    () async {
+      late http.Request captured;
+      final client = CustomerPortalClient(
+        baseUri: Uri.parse('https://ordering.example/api/customer-portal/'),
+        tokenProvider: () async => 'clerk-token',
+        client: MockClient((request) async {
+          captured = request;
+          return _lifecycleResponse(state: PortalLifecycleStates.submitted);
+        }),
+      );
+      final api = CustomerPortalAccountApi(client);
+      const input = PortalRegistrationInput(
+        name: 'Điểm bán Minh Anh',
+        phone: '0900000000',
+        businessType: 'Cửa hàng bán lẻ',
+        addressLine1: '125 Nguyễn Văn Linh',
+        ward: 'Phường Tân Phong',
+        province: 'Thành phố Hồ Chí Minh',
+      );
 
-    await api.submitRegistration(
-      input: input,
-      idempotencyKey:
-          'customer-registration-submit-123e4567-e89b-42d3-a456-426614174000',
-    );
+      await api.submitRegistration(
+        input: input,
+        idempotencyKey:
+            'customer-registration-submit-123e4567-e89b-42d3-a456-426614174000',
+      );
 
-    expect(captured.method, 'POST');
-    expect(
-      captured.url.toString(),
-      'https://ordering.example/api/customer-portal/registrations',
-    );
-    expect(
-      captured.headers['Idempotency-Key'],
-      'customer-registration-submit-123e4567-e89b-42d3-a456-426614174000',
-    );
-    final body = jsonDecode(captured.body) as Map<String, dynamic>;
-    final proposed = body['proposedCustomer'] as Map<String, dynamic>;
-    expect(proposed['name'], 'Điểm bán Minh Anh');
-    expect(
-      (proposed['address'] as Map<String, dynamic>)['countryCode'],
-      'VN',
-    );
-    client.close();
-  });
+      expect(captured.method, 'POST');
+      expect(
+        captured.url.toString(),
+        'https://ordering.example/api/customer-portal/registrations',
+      );
+      expect(
+        captured.headers['Idempotency-Key'],
+        'customer-registration-submit-123e4567-e89b-42d3-a456-426614174000',
+      );
+      final body = jsonDecode(captured.body) as Map<String, dynamic>;
+      final proposed = body['proposedCustomer'] as Map<String, dynamic>;
+      expect(proposed['name'], 'Điểm bán Minh Anh');
+      expect(
+        (proposed['address'] as Map<String, dynamic>)['countryCode'],
+        'VN',
+      );
+      client.close();
+    },
+  );
 
   test('resubmits registration with expected version and same BFF contract', () async {
     late http.Request captured;

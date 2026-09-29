@@ -262,12 +262,9 @@ class _PortalAccessLockedPage extends StatelessWidget {
     PortalLifecycleStates.linkedExisting ||
     PortalLifecycleStates.activationPending =>
       'Điểm bán đã được duyệt và đang kích hoạt quyền đặt hàng.',
-    PortalLifecycleStates.rejected =>
-      'Đăng ký điểm bán chưa được chấp thuận.',
-    PortalLifecycleStates.cancelled =>
-      'Đăng ký điểm bán đã kết thúc.',
-    PortalLifecycleStates.suspended =>
-      'Liên kết điểm bán hiện đang tạm khóa.',
+    PortalLifecycleStates.rejected => 'Đăng ký điểm bán chưa được chấp thuận.',
+    PortalLifecycleStates.cancelled => 'Đăng ký điểm bán đã kết thúc.',
+    PortalLifecycleStates.suspended => 'Liên kết điểm bán hiện đang tạm khóa.',
     _ => 'Điểm bán chưa được kích hoạt để đặt hàng.',
   };
 
