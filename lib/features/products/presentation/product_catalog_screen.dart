@@ -799,7 +799,8 @@ class _CatalogFamilyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPrice = selected.price.isAvailable && selected.price.amount != null;
+    final hasPrice =
+        selected.price.isAvailable && selected.price.amount != null;
 
     return Card(
       clipBehavior: Clip.antiAlias,
