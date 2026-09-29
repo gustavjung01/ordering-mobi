@@ -8,9 +8,9 @@ void main() {
       'https://pub-381648426a2447a7a5edd970ca02d14e.r2.dev/ordering';
 
   test('metadata version name stays synchronized for Key Manager', () {
-    final releaseConfig =
-        jsonDecode(File('release-config.json').readAsStringSync())
-            as Map<String, dynamic>;
+    final releaseConfig = jsonDecode(
+      File('release-config.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
     final releaseVersion = releaseConfig['version']?.toString();
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final match = RegExp(
@@ -48,8 +48,8 @@ void main() {
   });
 
   test('publication verifier locks the public pointer and APK location', () {
-    final source =
-        File('scripts/verify-release-publication.ps1').readAsStringSync();
+    final source = File('scripts/verify-release-publication.ps1')
+        .readAsStringSync();
 
     for (final required in [
       canonicalUpdateBase,
