@@ -38,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'sauce-seasoning': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-gia-vi.webp',
   };
 
-
   String? _categoryImageUrl(CustomerCategory category) {
     final direct = _categoryImages[category.id.trim().toLowerCase()];
     if (direct != null) return direct;

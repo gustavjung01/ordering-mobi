@@ -21,8 +21,8 @@ class CustomerAuthGate extends StatelessWidget {
       signedInBuilder: (context, authState) {
         final authClient = ClerkCustomerAuthClient(authState);
         final user = authState.user;
-        final imageUrl = user?.imageUrl.trim();
-        final profileImageUrl = user?.profileImageUrl.trim();
+        final imageUrl = user?.imageUrl?.trim();
+        final profileImageUrl = user?.profileImageUrl?.trim();
         final accountImageUrl = imageUrl?.isNotEmpty == true
             ? imageUrl
             : profileImageUrl;
