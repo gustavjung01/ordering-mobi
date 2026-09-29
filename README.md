@@ -33,16 +33,16 @@ Ordering Mobile là app dành cho khách hàng cuối nên installation được
 
 ~~~text
 Ordering Mobile
-├── Clerk publishable key -> cấu hình public của installation
-├── Customer Portal API   -> https://40.233.83.234/api/customer-portal/**
+├── Clerk publishable key -> cùng Clerk instance với Customer Ordering PWA
+├── Customer Portal BFF   -> https://sales.nguyenlieuhungphat.com/api/customer-portal/**
 └── Hỏi Hưng Phát         -> https://sales.nguyenlieuhungphat.com/api/assistant/chat
 ~~~
 
-Catalog, hồ sơ, đăng ký điểm bán và đơn hàng gọi trực tiếp Customer Portal API trên VPS Công Ty bằng Clerk bearer token. Mobile không kết nối PostgreSQL và không chứa `DATABASE_URL`, Clerk secret, token máy chủ hoặc API key nội bộ.
+Catalog, hồ sơ, đăng ký điểm bán và đơn hàng đi qua đúng Customer Ordering BFF như PWA. Mobile lấy default Clerk session token từ phiên đang hoạt động, gửi `Authorization: Bearer <token>` tới BFF; BFF chuyển nguyên header Authorization sang backend Công Ty. BFF không tạo token khác và không có bước xác minh người dùng thứ hai.
 
-Trợ lý giữ boundary riêng qua Customer Ordering BFF vì BFF sở hữu server-side AI token/context. Không đưa `ORDERING_AI_API_TOKEN` vào APK.
+Trợ lý cũng đi qua Customer Ordering BFF vì BFF sở hữu server-side AI token/context. Không đưa `ORDERING_AI_API_TOKEN` vào APK.
 
-Clerk publishable key là cấu hình công khai dành cho client. Backend Công Ty xác minh token theo Clerk issuer/JWKS; secret xác thực không nằm trong mobile.
+Clerk publishable key là cấu hình công khai dành cho client. Backend Công Ty là nơi xác minh JWT Clerk và tra identity/membership. Mobile không kết nối PostgreSQL và không chứa `DATABASE_URL`, Clerk secret, token máy chủ hoặc API key nội bộ.
 
 ## Chạy local
 
@@ -63,13 +63,13 @@ flutter run -d emulator-5556
 ~~~powershell
 flutter run -d emulator-5556 `
   --dart-define=ORDERING_CLERK_PUBLISHABLE_KEY=pk_live_REPLACE_WITH_PUBLIC_KEY `
-  --dart-define=ORDERING_CUSTOMER_PORTAL_ORIGIN=https://REPLACE_WITH_COMPANY_API_HOST `
+  --dart-define=ORDERING_CUSTOMER_PORTAL_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST `
   --dart-define=ORDERING_ASSISTANT_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST
 ~~~
 
-Màn xác thực signed-out dùng trực tiếp `ClerkAuthentication()` của `clerk_flutter`. Các phương thức đăng nhập, đăng ký, khôi phục mật khẩu và MFA hiển thị theo cấu hình của Clerk instance; mobile không duy trì một form password riêng song song với Clerk.
+Màn xác thực signed-out dùng trực tiếp `ClerkAuthentication()` của `clerk_flutter`. Các phương thức đăng nhập, đăng ký, khôi phục mật khẩu và MFA hiển thị theo cấu hình của cùng Clerk instance mà PWA sử dụng; mobile không duy trì một form password riêng song song với Clerk.
 
-Trạng thái Clerk được lưu qua `flutter_secure_storage`. Ứng dụng không duy trì một bản raw access token riêng; token gửi Customer Portal được lấy từ phiên Clerk đang hoạt động để tránh hai nguồn session.
+Trạng thái Clerk được lưu qua `flutter_secure_storage`. Ứng dụng không duy trì một bản raw access token riêng. Customer Portal dùng default session token của Clerk, tương đương PWA gọi `clerk.session.getToken()`; không dùng JWT template riêng cho mobile.
 
 Kiểm tra trước khi merge:
 

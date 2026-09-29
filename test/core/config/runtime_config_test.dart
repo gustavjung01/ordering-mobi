@@ -2,13 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ordering_mobile/core/config/runtime_config.dart';
 
 void main() {
-  test('production defaults are ready for the Hung Phat installation', () {
+  test('production defaults match the Customer Ordering PWA origin', () {
     const config = OrderingRuntimeConfig.fromEnvironment();
 
     expect(config.isReady, isTrue);
     expect(
       config.customerPortalBaseUri.toString(),
-      'https://40.233.83.234/api/customer-portal/',
+      'https://sales.nguyenlieuhungphat.com/api/customer-portal/',
     );
     expect(
       config.assistantEndpoint.toString(),
@@ -17,7 +17,7 @@ void main() {
     expect(config.hasValidClerkPublishableKey, isTrue);
   });
 
-  test('keeps Company Customer Portal and assistant boundaries separate', () {
+  test('allows Customer Portal and assistant origins to be overridden', () {
     const config = OrderingRuntimeConfig(
       clerkPublishableKey: 'pk_test_example',
       customerPortalOrigin: 'https://api.example',
