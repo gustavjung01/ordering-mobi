@@ -1,7 +1,8 @@
 class OrderingRuntimeConfig {
   static const defaultClerkPublishableKey =
       'pk_live_Y2xlcmsubmd1eWVubGlldWh1bmdwaGF0LmNvbSQ';
-  static const defaultCustomerPortalOrigin = 'https://40.233.83.234';
+  static const defaultCustomerPortalOrigin =
+      'https://sales.nguyenlieuhungphat.com';
   static const defaultAssistantOrigin = 'https://sales.nguyenlieuhungphat.com';
 
   const OrderingRuntimeConfig({
