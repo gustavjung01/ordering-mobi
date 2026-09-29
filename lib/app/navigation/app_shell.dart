@@ -1,4 +1,3 @@
-import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/network/customer_portal_account_models.dart';
@@ -25,6 +24,7 @@ class AppShell extends StatefulWidget {
     this.accountRepository,
     this.assistantApi,
     this.customerDisplayName,
+    this.accountImageUrl,
     this.onSignOut,
   });
 
@@ -34,6 +34,7 @@ class AppShell extends StatefulWidget {
   final CustomerAccountRepository? accountRepository;
   final CustomerAssistantApi? assistantApi;
   final String? customerDisplayName;
+  final String? accountImageUrl;
   final SignOutCallback? onSignOut;
 
   @override
@@ -161,12 +162,6 @@ class _AppShellState extends State<AppShell> {
     final orderingRepository = widget.orderingRepository;
     final accountRepository = widget.accountRepository;
     final lifecycle = _lifecycle;
-    final clerkUser = ClerkAuth.userOf(context);
-    final clerkImageUrl = clerkUser?.imageUrl?.trim();
-    final clerkProfileImageUrl = clerkUser?.profileImageUrl?.trim();
-    final accountImageUrl = clerkImageUrl?.isNotEmpty == true
-        ? clerkImageUrl
-        : clerkProfileImageUrl;
 
     return Scaffold(
       appBar: AppBar(
@@ -210,11 +205,11 @@ class _AppShellState extends State<AppShell> {
           for (var index = 0; index < _destinations.length; index++)
             NavigationDestination(
               icon: index == 4
-                  ? _AccountNavAvatar(imageUrl: accountImageUrl)
+                  ? _AccountNavAvatar(imageUrl: widget.accountImageUrl)
                   : Icon(_destinations[index].icon),
               selectedIcon: index == 4
                   ? _AccountNavAvatar(
-                      imageUrl: accountImageUrl,
+                      imageUrl: widget.accountImageUrl,
                       selected: true,
                     )
                   : Icon(_destinations[index].selectedIcon),

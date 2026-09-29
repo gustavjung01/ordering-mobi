@@ -20,11 +20,13 @@ class CustomerPortalSessionGate extends StatefulWidget {
     required this.authClient,
     required this.baseUri,
     this.assistantEndpoint,
+    this.accountImageUrl,
   });
 
   final ClerkCustomerAuthClient authClient;
   final Uri baseUri;
   final Uri? assistantEndpoint;
+  final String? accountImageUrl;
 
   @override
   State<CustomerPortalSessionGate> createState() =>
@@ -134,6 +136,7 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
             accountRepository: _accountRepository!,
             assistantApi: _assistantApi,
             customerDisplayName: snapshot.data!.profile?.displayName,
+            accountImageUrl: widget.accountImageUrl,
             onSignOut: widget.authClient.signOut,
           );
         }
