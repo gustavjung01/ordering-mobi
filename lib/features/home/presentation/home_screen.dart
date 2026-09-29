@@ -48,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _products = (results[1] as CustomerCatalogPage).items;
           _loading = false;
           _error = null;
-
         });
       }
     } on ApiFailure catch (error) {
@@ -56,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _loading = false;
           _error = error.message;
-
         });
       }
     } on Object {
@@ -64,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _loading = false;
           _error = 'Không tải được dữ liệu trang chủ.';
-
         });
       }
     }

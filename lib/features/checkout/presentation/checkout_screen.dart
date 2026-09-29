@@ -77,7 +77,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         setState(() {
           _loading = false;
           _error = error.message;
-
         });
       }
     } on Object {
@@ -85,7 +84,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         setState(() {
           _loading = false;
           _error = 'Không tải được thông tin xác nhận đơn.';
-
         });
       }
     }

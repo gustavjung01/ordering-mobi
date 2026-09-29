@@ -56,7 +56,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
       setState(() {
         _loading = true;
         _error = null;
-
       });
     }
     try {
@@ -66,7 +65,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
         setState(() {
           _orders = orders;
           _loading = false;
-
         });
       }
     } on ApiFailure catch (error) {
@@ -74,7 +72,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
         setState(() {
           _loading = false;
           _error = error.message;
-
         });
       }
     } on Object {
@@ -82,7 +79,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
         setState(() {
           _loading = false;
           _error = 'Không tải được danh sách đơn hàng.';
-
         });
       }
     }

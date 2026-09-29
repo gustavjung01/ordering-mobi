@@ -45,7 +45,6 @@ class _CartScreenState extends State<CartScreen> {
           _products = const {};
           _loading = false;
           _error = null;
-
         });
       }
       return;
@@ -62,7 +61,6 @@ class _CartScreenState extends State<CartScreen> {
           _products = map;
           _loading = false;
           _error = null;
-
         });
       }
     } on ApiFailure catch (error) {
@@ -70,7 +68,6 @@ class _CartScreenState extends State<CartScreen> {
         setState(() {
           _loading = false;
           _error = error.message;
-
         });
       }
     } on Object {
@@ -78,7 +75,6 @@ class _CartScreenState extends State<CartScreen> {
         setState(() {
           _loading = false;
           _error = 'Không tải được thông tin sản phẩm trong giỏ.';
-
         });
       }
     }

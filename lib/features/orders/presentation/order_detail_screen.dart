@@ -41,7 +41,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _order = order;
           _loading = false;
           _error = null;
-
         });
       }
     } on ApiFailure catch (error) {
@@ -49,7 +48,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         setState(() {
           _loading = false;
           _error = error.message;
-
         });
       }
     } on Object {
@@ -57,7 +55,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         setState(() {
           _loading = false;
           _error = 'Không tải được chi tiết đơn hàng.';
-
         });
       }
     }
@@ -98,7 +95,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         setState(() {
           _order = cancelled;
           _notice = 'Đơn hàng đã được hủy.';
-
         });
       }
     } on ApiFailure catch (error) {
