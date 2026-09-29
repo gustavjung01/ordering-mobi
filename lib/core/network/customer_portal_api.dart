@@ -5,6 +5,8 @@ import 'customer_portal_models.dart';
 abstract class CustomerOrderingRemote {
   Future<CustomerProfile> getProfile() => throw UnimplementedError();
 
+  Future<CustomerHomeContent> getHomeContent() => throw UnimplementedError();
+
   Future<CustomerCatalogPage> listCatalog({
     int limit = 50,
     int offset = 0,
@@ -62,6 +64,16 @@ class CustomerPortalApi extends CustomerOrderingRemote {
     final data = await _client.requestData('GET', 'me');
     try {
       return CustomerProfile.fromJson(_map(data['profile']));
+    } on FormatException {
+      throw _invalidResponse();
+    }
+  }
+
+  @override
+  Future<CustomerHomeContent> getHomeContent() async {
+    final data = await _client.requestData('GET', 'home-content');
+    try {
+      return CustomerHomeContent.fromJson(_map(data['homeContent']));
     } on FormatException {
       throw _invalidResponse();
     }

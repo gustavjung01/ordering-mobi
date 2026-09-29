@@ -315,6 +315,8 @@ class CustomerOrderingRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<CustomerHomeContent> getHomeContent() => _remote.getHomeContent();
+
   Future<List<DeliveryAddress>> listDeliveryAddresses() =>
       _remote.listDeliveryAddresses();
 

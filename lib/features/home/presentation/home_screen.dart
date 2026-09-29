@@ -2,12 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_models.dart';
-import '../../../shared/formatters.dart';
 import '../../ordering/data/customer_ordering_repository.dart';
-import '../../products/domain/catalog_product_metadata.dart';
-import '../../products/presentation/catalog_product_visual.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -28,178 +24,63 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const _heroImageUrl =
-      'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/hero-app-customer.jpg';
+  static const _imageBase =
+      'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system';
+  static const _heroImageUrl = '$_imageBase/hero-app-customer.jpg';
+  static const _categories = <_HomeCategoryShortcut>[
+    _HomeCategoryShortcut(
+      label: 'Trà sữa',
+      imageUrl: '$_imageBase/icon-tra-sua.webp',
+    ),
+    _HomeCategoryShortcut(
+      label: 'Mì cay',
+      imageUrl: '$_imageBase/icon-mi-cay.webp',
+    ),
+    _HomeCategoryShortcut(
+      label: 'Đông lạnh',
+      imageUrl: '$_imageBase/icon-dong-lanh.webp',
+    ),
+    _HomeCategoryShortcut(
+      label: 'Ăn vặt',
+      imageUrl: '$_imageBase/icon-an-vat.webp',
+    ),
+    _HomeCategoryShortcut(
+      label: 'Bao bì',
+      imageUrl: '$_imageBase/icon-bao-bi.webp',
+    ),
+    _HomeCategoryShortcut(
+      label: 'Gia vị',
+      imageUrl: '$_imageBase/icon-gia-vi.webp',
+    ),
+  ];
 
-  static const _categoryImages = <String, String>{
-    'milk-tea': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-tra-sua.webp',
-    'spicy-noodle': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-mi-cay.webp',
-    'frozen': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-dong-lanh.webp',
-    'snacks': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-an-vat.webp',
-    'packaging': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-bao-bi.webp',
-    'sauce-seasoning': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-gia-vi.webp',
-  };
-
-  String? _categoryImageUrl(CustomerCategory category) {
-    final direct = _categoryImages[category.id.trim().toLowerCase()];
-    if (direct != null) return direct;
-
-    final label = '${category.name} ${category.shortName}'.toLowerCase();
-    if (label.contains('trà sữa') || label.contains('tra sua')) {
-      return _categoryImages['milk-tea'];
-    }
-    if (label.contains('mì cay') || label.contains('mi cay')) {
-      return _categoryImages['spicy-noodle'];
-    }
-    if (label.contains('đông lạnh') || label.contains('dong lanh')) {
-      return _categoryImages['frozen'];
-    }
-    if (label.contains('ăn vặt') || label.contains('an vat')) {
-      return _categoryImages['snacks'];
-    }
-    if (label.contains('bao bì') || label.contains('bao bi')) {
-      return _categoryImages['packaging'];
-    }
-    if (label.contains('gia vị') ||
-        label.contains('gia vi') ||
-        label.contains('nước sốt') ||
-        label.contains('nuoc sot')) {
-      return _categoryImages['sauce-seasoning'];
-    }
-    return null;
-  }
-
-  int _categoryOrder(CustomerCategory category) {
-    final imageUrl = _categoryImageUrl(category);
-    if (imageUrl == _categoryImages['milk-tea']) return 0;
-    if (imageUrl == _categoryImages['spicy-noodle']) return 1;
-    if (imageUrl == _categoryImages['frozen']) return 2;
-    if (imageUrl == _categoryImages['snacks']) return 3;
-    if (imageUrl == _categoryImages['packaging']) return 4;
-    if (imageUrl == _categoryImages['sauce-seasoning']) return 5;
-    return 99;
-  }
-
-  List<CustomerCategory> get _homeCategories {
-    final roots = _categories
-        .where(
-          (category) =>
-              category.parentCategoryId == null ||
-              category.parentCategoryId!.trim().isEmpty,
-        )
-        .toList(growable: false);
-    final source = roots.isNotEmpty ? roots : _categories;
-    final illustrated = source
-        .where((category) => _categoryImageUrl(category) != null)
-        .toList(growable: false);
-    final result = [...(illustrated.isNotEmpty ? illustrated : source)]
-      ..sort((left, right) {
-        final order = _categoryOrder(left).compareTo(_categoryOrder(right));
-        if (order != 0) return order;
-        return left.shortName.compareTo(right.shortName);
-      });
-    return result;
-  }
-
-  List<CustomerOrder> _orders = const [];
-  List<CustomerCatalogItem> _products = const [];
-  List<CustomerCategory> _categories = const [];
-  CatalogMetadataIndex? _metadata;
-  String? _error;
-  bool _loading = true;
+  CustomerHomeContent? _homeContent;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    unawaited(_loadHomeContent());
   }
 
-  Future<void> _load() async {
+  Future<void> _loadHomeContent() async {
     try {
-      final results = await Future.wait<Object>([
-        widget.repository.listOrders(),
-        widget.repository.listCatalog(limit: 40, includeCategories: true),
-        CatalogMetadataIndex.shared(),
-      ]);
-      final orders = [...results[0] as List<CustomerOrder>]
-        ..sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
-      final catalog = results[1] as CustomerCatalogPage;
+      final content = await widget.repository.getHomeContent();
       if (!mounted) return;
-      setState(() {
-        _orders = orders;
-        _products = catalog.items;
-        _categories = catalog.categories;
-        _metadata = results[2] as CatalogMetadataIndex;
-        _loading = false;
-        _error = null;
-      });
-      unawaited(_hydrateHomePrices(catalog.items));
-    } on ApiFailure catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      setState(() => _homeContent = content);
     } on Object {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Không tải được dữ liệu trang chủ.';
-      });
-    }
-  }
-
-  Future<void> _hydrateHomePrices(
-    Iterable<CustomerCatalogItem> source,
-  ) async {
-    final pending = source
-        .where((item) => item.variantId?.trim().isNotEmpty == true)
-        .take(24)
-        .toList(growable: false);
-    if (pending.isEmpty) return;
-
-    try {
-      final resolved = await widget.repository.refreshCatalogPrices(pending);
-      if (!mounted) return;
-      final bySku = {for (final item in resolved) item.sku: item};
-      setState(() {
-        _products = [for (final item in _products) bySku[item.sku] ?? item];
-      });
-    } on Object {
-      // Home keeps cached prices when background refresh is unavailable.
-    }
-  }
-
-  Future<void> _addProduct(CustomerCatalogItem item) async {
-    try {
-      await widget.repository.addProduct(item);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã thêm ${item.name} vào giỏ hàng.')),
-      );
-      setState(() {});
-    } on ApiFailure catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      // Nội dung quản trị không được chặn Trang chủ khi mạng tạm thời gián đoạn.
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final latest = _orders.isEmpty ? null : _orders.first;
-    final metadata = _metadata;
-    final groups = metadata == null
-        ? const <CatalogProductGroup>[]
-        : buildCatalogProductGroups(
-            _products,
-            metadata,
-          ).take(6).toList(growable: false);
-    final homeCategories = _homeCategories;
+    final content = _homeContent;
+    final showManagedBanner =
+        content?.visible == true &&
+        content?.bannerUrl?.trim().isNotEmpty == true;
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: _loadHomeContent,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
         children: [
@@ -212,91 +93,46 @@ class _HomeScreenState extends State<HomeScreen> {
             onOrders: () => widget.onSelectTab(3),
             onAssistant: widget.onOpenAssistant,
           ),
-          const SizedBox(height: 18),
-          if (_loading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (_error != null)
-            _StateCard(
-              icon: Icons.cloud_off_rounded,
-              message: _error!,
-              onRetry: _load,
-            )
-          else ...[
-            if (latest != null) ...[
-              _SectionHeading(
-                title: 'Đơn hàng gần nhất',
-                actionLabel: 'Xem tất cả',
-                onAction: () => widget.onSelectTab(3),
-              ),
-              const SizedBox(height: 8),
-              _LatestOrderCard(
-                order: latest,
-                onTap: () => widget.onSelectTab(3),
-              ),
-              const SizedBox(height: 18),
-            ],
-            if (homeCategories.isNotEmpty) ...[
-              _SectionHeading(
-                title: 'Ngành hàng',
-                actionLabel: 'Xem tất cả',
-                onAction: () => widget.onSelectTab(1),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 92,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: homeCategories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    final category = homeCategories[index];
-                    return _CategoryCard(
-                      category: category,
-                      imageUrl: _categoryImageUrl(category),
-                      onTap: () => widget.onSelectTab(1),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 18),
-            ],
-            if (groups.isNotEmpty && metadata != null) ...[
-              _SectionHeading(
-                title: 'Sản phẩm',
-                actionLabel: 'Xem tất cả',
-                onAction: () => widget.onSelectTab(1),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 238,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: groups.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    final item = group.preferred(purchaseMode: 'retail');
-                    return _ProductPreviewCard(
-                      group: group,
-                      item: item,
-                      metadata: metadata,
-                      onOpen: () => widget.onSelectTab(1),
-                      onAdd: () => _addProduct(item),
-                    );
-                  },
-                ),
-              ),
-            ],
+          const SizedBox(height: 20),
+          _SectionHeading(
+            title: 'Ngành hàng',
+            actionLabel: 'Xem tất cả',
+            onAction: () => widget.onSelectTab(1),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                return _CategoryCard(
+                  category: category,
+                  onTap: () => widget.onSelectTab(1),
+                );
+              },
+            ),
+          ),
+          if (showManagedBanner) ...[
+            const SizedBox(height: 20),
+            _ManagedHomeBanner(content: content!),
           ],
         ],
       ),
     );
   }
+}
+
+class _HomeCategoryShortcut {
+  const _HomeCategoryShortcut({
+    required this.label,
+    required this.imageUrl,
+  });
+
+  final String label;
+  final String imageUrl;
 }
 
 class _SearchLauncher extends StatelessWidget {
@@ -614,97 +450,10 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
-class _LatestOrderCard extends StatelessWidget {
-  const _LatestOrderCard({required this.order, required this.onTap});
-
-  final CustomerOrder order;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      order.code,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    formatDateTime(order.submittedAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6C757D),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3CD),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      orderStatusLabel(order.status),
-                      style: const TextStyle(
-                        color: Color(0xFF7A5700),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '${order.lines.length} mặt hàng · ${order.totalQuantity} sản phẩm',
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  Text(
-                    formatVnd(order.pricedSubtotal),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF17221A),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const Icon(Icons.chevron_right_rounded, size: 20),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({
-    required this.category,
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _CategoryCard({required this.category, required this.onTap});
 
-  final CustomerCategory category;
-  final String? imageUrl;
+  final _HomeCategoryShortcut category;
   final VoidCallback onTap;
 
   @override
@@ -715,7 +464,7 @@ class _CategoryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(17),
         child: Ink(
-          width: 86,
+          width: 88,
           decoration: BoxDecoration(
             color: const Color(0xFFEEF3EF),
             borderRadius: BorderRadius.circular(17),
@@ -726,15 +475,12 @@ class _CategoryCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (imageUrl != null)
-                  Image.network(
-                    imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const _CategoryFallback(),
-                  )
-                else
-                  const _CategoryFallback(),
+                Image.network(
+                  category.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const _CategoryFallback(),
+                ),
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -754,7 +500,7 @@ class _CategoryCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(5, 24, 5, 7),
                     child: Text(
-                      category.shortName,
+                      category.label,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -797,150 +543,39 @@ class _CategoryFallback extends StatelessWidget {
   }
 }
 
-class _ProductPreviewCard extends StatelessWidget {
-  const _ProductPreviewCard({
-    required this.group,
-    required this.item,
-    required this.metadata,
-    required this.onOpen,
-    required this.onAdd,
-  });
+class _ManagedHomeBanner extends StatelessWidget {
+  const _ManagedHomeBanner({required this.content});
 
-  final CatalogProductGroup group;
-  final CustomerCatalogItem item;
-  final CatalogMetadataIndex metadata;
-  final VoidCallback onOpen;
-  final VoidCallback onAdd;
+  final CustomerHomeContent content;
 
   @override
   Widget build(BuildContext context) {
-    final brand = metadata.brandFor(item);
-    final detail = [
-      metadata.variantFor(item),
-      metadata.sizeFor(item),
-    ].where((value) => value.isNotEmpty).join(' · ');
-    final price = item.price.isAvailable && item.price.amount != null
-        ? formatVnd(item.price.amount!)
-        : 'Chờ giá';
-
-    return SizedBox(
-      width: 158,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onOpen,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: CatalogProductVisual(
-                    item: item,
-                    metadata: metadata,
-                    size: 104,
-                    borderRadius: 15,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (brand.isNotEmpty)
-                  Text(
-                    brand,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF6C757D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                Text(
-                  group.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF17221A),
-                    fontSize: 13,
-                    height: 1.15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                if (detail.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    detail,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF6C757D),
-                      fontSize: 10.5,
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        price,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF0F6B3D),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    IconButton.filled(
-                      tooltip: 'Thêm vào giỏ',
-                      onPressed: onAdd,
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFC107),
-                        foregroundColor: const Color(0xFF17221A),
-                        minimumSize: const Size(34, 34),
-                        maximumSize: const Size(34, 34),
-                        padding: EdgeInsets.zero,
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 20),
-                    ),
-                  ],
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          content.sectionTitle,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        AspectRatio(
+          aspectRatio: 3.6,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(color: Color(0xFFEEF3EF)),
+              child: Image.network(
+                content.bannerUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const SizedBox.shrink(),
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StateCard extends StatelessWidget {
-  const _StateCard({
-    required this.icon,
-    required this.message,
-    required this.onRetry,
-  });
-
-  final IconData icon;
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Icon(icon, size: 38),
-            const SizedBox(height: 10),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 10),
-            TextButton(onPressed: onRetry, child: const Text('Thử lại')),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
