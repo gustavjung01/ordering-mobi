@@ -109,7 +109,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       await widget.repository.addProduct(item, quantity: quantity);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã thêm \${item.name} vào giỏ.')),
+        SnackBar(content: Text('Đã thêm ${item.name} vào giỏ.')),
       );
     } on ApiFailure catch (error) {
       if (!mounted) return;
@@ -424,7 +424,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           label: 'Mua lẻ',
                           item: retail,
                           selected: selected.purchaseMode == 'retail',
-                          onTap: retail == null ? null : () => selectProduct(retail),
+                          onTap: retail == null
+                              ? null
+                              : () => selectProduct(retail),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -460,7 +462,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           },
                           icon: const Icon(Icons.add_shopping_cart_rounded),
                           label: Text(
-                            'Thêm \${selected.purchaseMode == 'case' ? 'thùng' : 'lẻ'} vào giỏ',
+                            selected.purchaseMode == 'case'
+                                ? 'Thêm thùng vào giỏ'
+                                : 'Thêm lẻ vào giỏ',
                           ),
                         ),
                       ),
@@ -654,7 +658,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               ),
               itemBuilder: (context, index) {
                 final group = shownGroups[index];
-                final visibleProducts = visibleByKey[group.key] ?? group.products;
+                final visibleProducts =
+                    visibleByKey[group.key] ?? group.products;
                 final visibleGroup = CatalogProductGroup(
                   key: group.key,
                   name: group.name,
@@ -688,7 +693,10 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         .toInt();
                   }),
                   child: Text(
-                    'Xem thêm \${(_loadMoreGroups).clamp(0, groups.length - _visibleGroupCount)} sản phẩm',
+                    'Xem thêm ${_loadMoreGroups.clamp(
+                      0,
+                      groups.length - _visibleGroupCount,
+                    )} sản phẩm',
                   ),
                 ),
               ),
@@ -727,9 +735,9 @@ class _CatalogFamilyCard extends StatelessWidget {
     final subtitle = [
       metadata.productTypeFor(selected),
       variants.length > 1
-          ? '\${variants.length} vị / loại'
+          ? '${variants.length} vị / loại'
           : metadata.variantFor(selected),
-      sizes.length > 1 ? '\${sizes.length} size' : metadata.sizeFor(selected),
+      sizes.length > 1 ? '${sizes.length} size' : metadata.sizeFor(selected),
     ].where((value) => value.isNotEmpty).join(' · ');
 
     return Card(

@@ -211,9 +211,9 @@ class CatalogMetadataIndex {
   String groupKeyFor(CustomerCatalogItem item) {
     final meta = metadataFor(item);
     if (meta != null && meta.productCardKey.isNotEmpty) {
-      return 'canonical:\${meta.productCardKey}';
+      return 'canonical:${meta.productCardKey}';
     }
-    return 'family:\${familySkuFor(item)}';
+    return 'family:${familySkuFor(item)}';
   }
 
   String groupNameFor(CustomerCatalogItem item) {
@@ -290,7 +290,7 @@ class CatalogMetadataIndex {
   String? imageUrlFor(CustomerCatalogItem item) {
     final family = familySkuFor(item);
     if (!_imageFamilies.contains(family)) return null;
-    return '$_productImageBase/\${Uri.encodeComponent(family)}.webp';
+    return '$_productImageBase/${Uri.encodeComponent(family)}.webp';
   }
 }
 

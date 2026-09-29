@@ -131,7 +131,7 @@ class _QuickOrderScreenState extends State<QuickOrderScreen> {
       await widget.repository.addProduct(item);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã thêm \${item.name} vào giỏ.')),
+        SnackBar(content: Text('Đã thêm ${item.name} vào giỏ.')),
       );
     } on ApiFailure catch (error) {
       if (!mounted) return;
@@ -475,7 +475,9 @@ class _QuickResults extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6, bottom: 12),
             child: FilledButton.tonal(
               onPressed: loadingMore ? null : onLoadMore,
-              child: Text(loadingMore ? 'Đang tải thêm...' : 'Xem thêm sản phẩm'),
+              child: Text(
+                loadingMore ? 'Đang tải thêm...' : 'Xem thêm sản phẩm',
+              ),
             ),
           );
         },
