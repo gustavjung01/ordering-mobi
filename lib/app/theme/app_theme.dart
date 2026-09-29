@@ -13,9 +13,9 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: const Color(0xFFF6F7F9),
-      extensions: const [
+      extensions: [
         ClerkThemeExtension(
-          colors: ClerkThemeColors(
+          colors: const ClerkThemeColors(
             background: Colors.white,
             altBackground: Color(0xFFF6F7F9),
             borderSide: Color(0xFFDDE3EC),

@@ -6,13 +6,13 @@ class CustomerSignInScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: ClerkAuthentication(),
             ),
           ),
