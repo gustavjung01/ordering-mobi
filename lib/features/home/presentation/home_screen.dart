@@ -12,11 +12,13 @@ class HomeScreen extends StatefulWidget {
     required this.profile,
     required this.repository,
     required this.onSelectTab,
+    this.onOpenAssistant,
   });
 
   final CustomerProfile profile;
   final CustomerOrderingRepository repository;
   final ValueChanged<int> onSelectTab;
+  final VoidCallback? onOpenAssistant;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -89,8 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     'Xin chào, ${widget.profile.displayName}',
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -115,6 +118,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           'Giỏ hàng (${widget.repository.cartQuantity})',
                         ),
                       ),
+                      if (widget.onOpenAssistant != null)
+                        OutlinedButton.icon(
+                          onPressed: widget.onOpenAssistant,
+                          icon: const Icon(Icons.chat_bubble_outline_rounded),
+                          label: const Text('Hỏi Hưng Phát'),
+                        ),
                     ],
                   ),
                 ],
@@ -271,8 +280,9 @@ class _HomeSection extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             child,

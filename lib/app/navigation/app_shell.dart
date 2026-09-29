@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../core/network/customer_portal_account_models.dart';
 import '../../core/network/customer_portal_models.dart';
+import '../../features/account/data/customer_account_repository.dart';
 import '../../features/account/presentation/account_screen.dart';
+import '../../features/assistant/data/customer_assistant_api.dart';
+import '../../features/assistant/presentation/customer_assistant_screen.dart';
 import '../../features/cart/presentation/cart_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/orders/presentation/orders_screen.dart';
@@ -14,14 +18,20 @@ typedef SignOutCallback = Future<void> Function();
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
+    this.lifecycle,
     this.profile,
-    this.repository,
+    this.orderingRepository,
+    this.accountRepository,
+    this.assistantApi,
     this.customerDisplayName,
     this.onSignOut,
   });
 
+  final PortalLifecycleSnapshot? lifecycle;
   final CustomerProfile? profile;
-  final CustomerOrderingRepository? repository;
+  final CustomerOrderingRepository? orderingRepository;
+  final CustomerAccountRepository? accountRepository;
+  final CustomerAssistantApi? assistantApi;
   final String? customerDisplayName;
   final SignOutCallback? onSignOut;
 
@@ -31,6 +41,8 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   var _index = 0;
+  PortalLifecycleSnapshot? _lifecycle;
+  CustomerProfile? _profile;
 
   static const _destinations = <_AppDestination>[
     _AppDestination(
@@ -65,14 +77,32 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = widget.lifecycle;
+    _profile = widget.profile;
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.lifecycle, widget.lifecycle)) {
+      _lifecycle = widget.lifecycle;
+    }
+    if (!identical(oldWidget.profile, widget.profile)) {
+      _profile = widget.profile;
+    }
+  }
+
   void _selectTab(int index) {
     if (index < 0 || index >= _destinations.length) return;
     setState(() => _index = index);
   }
 
   Future<void> _openCart() async {
-    final repository = widget.repository;
-    if (repository == null) return;
+    final repository = widget.orderingRepository;
+    if (repository == null || !_orderingEnabled) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CartScreen(repository: repository),
@@ -81,22 +111,56 @@ class _AppShellState extends State<AppShell> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openAssistant() async {
+    final api = widget.assistantApi;
+    if (api == null || !_orderingEnabled) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CustomerAssistantScreen(api: api),
+      ),
+    );
+  }
+
+  bool get _orderingEnabled =>
+      _lifecycle?.isActiveCustomer == true && _profile != null;
+
+  void _applyLifecycle(PortalLifecycleSnapshot lifecycle) {
+    if (!mounted) return;
+    setState(() {
+      _lifecycle = lifecycle;
+      if (!lifecycle.isActiveCustomer) _profile = null;
+    });
+  }
+
+  void _applyPortalProfile(PortalProfile profile) {
+    if (!mounted) return;
+    setState(() {
+      _profile = CustomerProfile(
+        customerCode: profile.customerCode,
+        displayName: profile.displayName,
+        phone: profile.phone,
+        outletName: profile.outletName,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final destination = _destinations[_index];
-    final repository = widget.repository;
-    final profile = widget.profile;
+    final orderingRepository = widget.orderingRepository;
+    final accountRepository = widget.accountRepository;
+    final lifecycle = _lifecycle;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(destination.title),
         actions: [
-          if (repository != null)
+          if (_orderingEnabled && orderingRepository != null)
             AnimatedBuilder(
-              animation: repository,
+              animation: orderingRepository,
               builder: (context, _) => Badge(
-                isLabelVisible: repository.cartQuantity > 0,
-                label: Text('${repository.cartQuantity}'),
+                isLabelVisible: orderingRepository.cartQuantity > 0,
+                label: Text('${orderingRepository.cartQuantity}'),
                 child: IconButton(
                   tooltip: 'Giỏ hàng',
                   onPressed: _openCart,
@@ -107,8 +171,15 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       body: SafeArea(
-        child: repository != null && profile != null
-            ? _buildBusinessPage(repository, profile)
+        child:
+            orderingRepository != null &&
+                accountRepository != null &&
+                lifecycle != null
+            ? _buildPortalPage(
+                orderingRepository,
+                accountRepository,
+                lifecycle,
+              )
             : _PlaceholderPage(
                 destination: destination,
                 customerDisplayName: widget.customerDisplayName,
@@ -130,21 +201,113 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Widget _buildBusinessPage(
-    CustomerOrderingRepository repository,
-    CustomerProfile profile,
+  Widget _buildPortalPage(
+    CustomerOrderingRepository orderingRepository,
+    CustomerAccountRepository accountRepository,
+    PortalLifecycleSnapshot lifecycle,
   ) {
+    if (_index == 4) {
+      return AccountScreen(
+        lifecycle: lifecycle,
+        profile: _profile,
+        repository: accountRepository,
+        onLifecycleChanged: _applyLifecycle,
+        onProfileChanged: _applyPortalProfile,
+        onSignOut: widget.onSignOut,
+      );
+    }
+
+    final profile = _profile;
+    if (!lifecycle.isActiveCustomer || profile == null) {
+      return _PortalAccessLockedPage(
+        lifecycle: lifecycle,
+        onOpenAccount: () => _selectTab(4),
+      );
+    }
+
     return switch (_index) {
       0 => HomeScreen(
         profile: profile,
-        repository: repository,
+        repository: orderingRepository,
         onSelectTab: _selectTab,
+        onOpenAssistant: widget.assistantApi == null ? null : _openAssistant,
       ),
-      1 => ProductCatalogScreen(repository: repository),
-      2 => QuickOrderScreen(repository: repository),
-      3 => OrdersScreen(repository: repository),
-      _ => AccountScreen(profile: profile, onSignOut: widget.onSignOut),
+      1 => ProductCatalogScreen(repository: orderingRepository),
+      2 => QuickOrderScreen(repository: orderingRepository),
+      3 => OrdersScreen(repository: orderingRepository),
+      _ => const SizedBox.shrink(),
     };
+  }
+}
+
+class _PortalAccessLockedPage extends StatelessWidget {
+  const _PortalAccessLockedPage({
+    required this.lifecycle,
+    required this.onOpenAccount,
+  });
+
+  final PortalLifecycleSnapshot lifecycle;
+  final VoidCallback onOpenAccount;
+
+  String get _message => switch (lifecycle.state) {
+    PortalLifecycleStates.unregistered =>
+      'Điểm bán chưa đăng ký với Hưng Phát.',
+    PortalLifecycleStates.submitted =>
+      'Đăng ký điểm bán đã được gửi và đang chờ xử lý.',
+    PortalLifecycleStates.underReview =>
+      'Điểm bán đang được Hưng Phát xác minh.',
+    PortalLifecycleStates.needMoreInfo =>
+      'Đăng ký cần bổ sung thông tin trước khi được duyệt.',
+    PortalLifecycleStates.approved ||
+    PortalLifecycleStates.linkedExisting ||
+    PortalLifecycleStates.activationPending =>
+      'Điểm bán đã được duyệt và đang kích hoạt quyền đặt hàng.',
+    PortalLifecycleStates.rejected =>
+      'Đăng ký điểm bán chưa được chấp thuận.',
+    PortalLifecycleStates.cancelled =>
+      'Đăng ký điểm bán đã kết thúc.',
+    PortalLifecycleStates.suspended =>
+      'Liên kết điểm bán hiện đang tạm khóa.',
+    _ => 'Điểm bán chưa được kích hoạt để đặt hàng.',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified_user_outlined, size: 42),
+                  const SizedBox(height: 16),
+                  Text(
+                    _message,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Danh mục, giỏ hàng và đặt hàng sẽ mở khi tài khoản điểm bán được kích hoạt. Anh/chị vẫn có thể xem và cập nhật trạng thái trong mục Tài khoản.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: onOpenAccount,
+                    child: const Text('Đăng ký / xem trạng thái điểm bán'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -210,8 +373,9 @@ class _PlaceholderPageState extends State<_PlaceholderPage> {
                 const SizedBox(height: 18),
                 Text(
                   widget.destination.title,
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(message),
