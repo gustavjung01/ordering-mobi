@@ -82,9 +82,9 @@ void main() {
     final remote = _FakeRemote()..submitFailuresRemaining = 1;
 
     final first = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await first.initialize();
@@ -103,9 +103,9 @@ void main() {
     expect(CanonicalIdempotencyKey.isValid(remote.submitKeys.single), isTrue);
 
     final second = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await second.initialize();
@@ -125,9 +125,9 @@ void main() {
     final secure = _MemoryStore();
     final remote = _FakeRemote()..submitFailuresRemaining = 1;
     final repository = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await repository.initialize();
@@ -154,9 +154,9 @@ void main() {
     final remote = _FakeRemote()..cancelFailuresRemaining = 1;
 
     final first = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await first.initialize();
@@ -166,9 +166,9 @@ void main() {
     );
 
     final second = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await second.initialize();
@@ -177,6 +177,51 @@ void main() {
     expect(remote.cancelKeys, hasLength(2));
     expect(remote.cancelKeys[1], remote.cancelKeys[0]);
     expect(CanonicalIdempotencyKey.isValid(remote.cancelKeys[0]), isTrue);
+  });
+
+  test('does not silently truncate a cart over 200 lines', () async {
+    final local = _MemoryStore();
+    final secure = _MemoryStore();
+    final remote = _FakeRemote();
+    final repository = CustomerOrderingRepository(
+      remote,
+      local,
+      secure,
+      userId: 'user-1',
+    );
+    await repository.initialize();
+    await repository.saveCart(
+      CustomerCart(
+        lines: [
+          for (var index = 0; index < 200; index += 1)
+            CartLine(sku: 'SKU-$index', quantity: 1),
+        ],
+        updatedAt: DateTime.utc(2026, 9, 29),
+      ),
+    );
+
+    await expectLater(
+      repository.addProduct(
+        const CustomerCatalogItem(
+          sku: 'SKU-201',
+          name: 'Sản phẩm 201',
+          variantName: 'Gói',
+          price: CustomerProductPrice(
+            amount: 10000,
+            currency: 'VND',
+            status: 'available',
+          ),
+        ),
+      ),
+      throwsA(
+        isA<ApiFailure>().having(
+          (error) => error.code,
+          'code',
+          'ORDER_TOO_MANY_LINES',
+        ),
+      ),
+    );
+    expect(repository.cart.lines, hasLength(200));
   });
 
   test('reorder caps quantity and skips unavailable SKUs', () async {
@@ -196,9 +241,9 @@ void main() {
         ),
       ];
     final repository = CustomerOrderingRepository(
-      remote: remote,
-      localStore: local,
-      secureStore: secure,
+      remote,
+      local,
+      secure,
       userId: 'user-1',
     );
     await repository.initialize();
@@ -222,7 +267,8 @@ CustomerOrder _order({
   String status = 'SUBMITTED',
   List<CartLine>? lines,
 }) {
-  final orderLines = lines ??
+  final orderLines =
+      lines ??
       const [
         CartLine(sku: 'SKU-1', quantity: 2),
         CartLine(sku: 'SKU-2', quantity: 1),

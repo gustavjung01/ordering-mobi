@@ -1,4 +1,3 @@
-
 String formatVnd(num amount) {
   final negative = amount < 0;
   final digits = amount.abs().round().toString();

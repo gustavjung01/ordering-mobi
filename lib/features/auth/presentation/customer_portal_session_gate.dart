@@ -64,9 +64,9 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
 
     _orderingRepository?.dispose();
     final repository = CustomerOrderingRepository(
-      remote: _portalApi,
-      localStore: SharedPreferencesOrderingLocalStore(),
-      secureStore: FlutterSecureStringStore(),
+      _portalApi,
+      SharedPreferencesOrderingLocalStore(),
+      FlutterSecureStringStore(),
       userId: session.userId,
     );
     await repository.initialize();

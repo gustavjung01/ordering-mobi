@@ -36,21 +36,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _load() async {
     try {
       final order = await widget.repository.getOrderById(widget.orderId);
-      if (mounted) setState(() {
-        _order = order;
-        _loading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _order = order;
+          _loading = false;
+          _error = null;
+
+        });
+      }
     } on ApiFailure catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.message;
+
+        });
+      }
     } on Object {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Không tải được chi tiết đơn hàng.';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Không tải được chi tiết đơn hàng.';
+
+        });
+      }
     }
   }
 
@@ -85,10 +94,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     });
     try {
       final cancelled = await widget.repository.cancelOrder(order.id);
-      if (mounted) setState(() {
-        _order = cancelled;
-        _notice = 'Đơn hàng đã được hủy.';
-      });
+      if (mounted) {
+        setState(() {
+          _order = cancelled;
+          _notice = 'Đơn hàng đã được hủy.';
+
+        });
+      }
     } on ApiFailure catch (error) {
       if (mounted) setState(() => _error = error.message);
     } on Object {
@@ -134,9 +146,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Chi tiết đơn')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Chi tiết đơn')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_order == null) {

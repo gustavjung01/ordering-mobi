@@ -40,11 +40,14 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _loadProducts() async {
     final skus = widget.repository.cart.lines.map((line) => line.sku).toList();
     if (skus.isEmpty) {
-      if (mounted) setState(() {
-        _products = const {};
-        _loading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _products = const {};
+          _loading = false;
+          _error = null;
+
+        });
+      }
       return;
     }
 
@@ -54,21 +57,30 @@ class _CartScreenState extends State<CartScreen> {
       for (var index = 0; index < skus.length; index += 1) {
         map[skus[index]] = items[index];
       }
-      if (mounted) setState(() {
-        _products = map;
-        _loading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _products = map;
+          _loading = false;
+          _error = null;
+
+        });
+      }
     } on ApiFailure catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.message;
+
+        });
+      }
     } on Object {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Không tải được thông tin sản phẩm trong giỏ.';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Không tải được thông tin sản phẩm trong giỏ.';
+
+        });
+      }
     }
   }
 
@@ -262,15 +274,16 @@ class _CartLineCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              key: ValueKey('${line.sku}-${line.note}'),
+              key: ValueKey(line.sku),
               initialValue: line.note,
               maxLength: 180,
               decoration: const InputDecoration(
                 labelText: 'Ghi chú mặt hàng',
                 border: OutlineInputBorder(),
               ),
-              onFieldSubmitted: (value) =>
-                  repository.updateCartLine(line.sku, note: value),
+              onChanged: (value) {
+                repository.updateCartLine(line.sku, note: value);
+              },
             ),
           ],
         ),

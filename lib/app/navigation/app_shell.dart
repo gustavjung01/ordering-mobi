@@ -136,10 +136,10 @@ class _AppShellState extends State<AppShell> {
   ) {
     return switch (_index) {
       0 => HomeScreen(
-          profile: profile,
-          repository: repository,
-          onSelectTab: _selectTab,
-        ),
+        profile: profile,
+        repository: repository,
+        onSelectTab: _selectTab,
+      ),
       1 => ProductCatalogScreen(repository: repository),
       2 => QuickOrderScreen(repository: repository),
       3 => OrdersScreen(repository: repository),

@@ -52,44 +52,58 @@ class _OrdersScreenState extends State<OrdersScreen> {
   void _searchChanged() => setState(() {});
 
   Future<void> _load() async {
-    if (mounted) setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+
+      });
+    }
     try {
       final orders = await widget.repository.listOrders();
       orders.sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
-      if (mounted) setState(() {
-        _orders = orders;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _loading = false;
+
+        });
+      }
     } on ApiFailure catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.message;
+
+        });
+      }
     } on Object {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Không tải được danh sách đơn hàng.';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Không tải được danh sách đơn hàng.';
+
+        });
+      }
     }
   }
 
   List<CustomerOrder> get _visibleOrders {
     final query = _searchController.text.trim().toLowerCase();
-    return _orders.where((order) {
-      if (_status != 'ALL' && order.status != _status) return false;
-      if (query.isEmpty) return true;
-      final text = [
-        order.code,
-        order.address.label,
-        order.address.recipientName,
-        for (final line in order.lines) line.sku,
-        for (final line in order.lines) line.productName,
-      ].join(' ').toLowerCase();
-      return text.contains(query);
-    }).toList(growable: false);
+    return _orders
+        .where((order) {
+          if (_status != 'ALL' && order.status != _status) return false;
+          if (query.isEmpty) return true;
+          final text = [
+            order.code,
+            order.address.label,
+            order.address.recipientName,
+            for (final line in order.lines) line.sku,
+            for (final line in order.lines) line.productName,
+          ].join(' ').toLowerCase();
+          return text.contains(query);
+        })
+        .toList(growable: false);
   }
 
   Future<void> _openOrder(CustomerOrder order) async {
@@ -150,9 +164,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     child: ChoiceChip(
                       selected: _status == status,
                       label: Text(
-                        status == 'ALL'
-                            ? 'Tất cả'
-                            : orderStatusLabel(status),
+                        status == 'ALL' ? 'Tất cả' : orderStatusLabel(status),
                       ),
                       onSelected: (_) => setState(() => _status = status),
                     ),
@@ -209,7 +221,9 @@ class _OrderCard extends StatelessWidget {
               ),
               Text(formatDateTime(order.submittedAt)),
               const SizedBox(height: 10),
-              Text('${order.lines.length} mặt hàng · ${order.totalQuantity} đơn vị'),
+              Text(
+                '${order.lines.length} mặt hàng · ${order.totalQuantity} đơn vị',
+              ),
               const SizedBox(height: 4),
               Text(
                 formatVnd(order.pricedSubtotal),

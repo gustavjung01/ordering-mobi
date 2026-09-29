@@ -12,8 +12,7 @@ abstract class CustomerOrderingRemote {
     String? categoryId,
     String? purchaseMode,
     bool includeCategories = true,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 
   Future<CustomerCatalogItem?> getProductBySku(String sku) =>
       throw UnimplementedError();
@@ -29,8 +28,7 @@ abstract class CustomerOrderingRemote {
     required String orderNote,
     required List<CartLine> lines,
     required String idempotencyKey,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 
   Future<List<CustomerOrder>> listOrders() => throw UnimplementedError();
 
@@ -40,8 +38,7 @@ abstract class CustomerOrderingRemote {
   Future<CustomerOrder> cancelOrder({
     required String orderId,
     required String idempotencyKey,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 }
 
 class CustomerPortalApi extends CustomerOrderingRemote {

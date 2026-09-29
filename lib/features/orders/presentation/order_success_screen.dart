@@ -57,7 +57,9 @@ class OrderSuccessScreen extends StatelessWidget {
                   ),
                   Text(formatDateTime(order.submittedAt)),
                   const Divider(height: 28),
-                  Text('${order.lines.length} dòng · ${order.totalQuantity} sản phẩm'),
+                  Text(
+                    '${order.lines.length} dòng · ${order.totalQuantity} sản phẩm',
+                  ),
                   const SizedBox(height: 4),
                   Text('Tạm tính: ${formatVnd(order.pricedSubtotal)}'),
                   if (order.hasPendingPrice)

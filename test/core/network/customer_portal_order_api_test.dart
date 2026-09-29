@@ -8,41 +8,46 @@ import 'package:ordering_mobile/core/network/customer_portal_client.dart';
 import 'package:ordering_mobile/core/network/customer_portal_models.dart';
 
 void main() {
-  test('submit order uses Customer Portal BFF and idempotency header', () async {
-    late http.Request captured;
-    final client = CustomerPortalClient(
-      baseUri: Uri.parse('https://ordering.example/api/customer-portal/'),
-      tokenProvider: () async => 'clerk-token',
-      client: MockClient((request) async {
-        captured = request;
-        return _orderResponse();
-      }),
-    );
-    final api = CustomerPortalApi(client);
+  test(
+    'submit order uses Customer Portal BFF and idempotency header',
+    () async {
+      late http.Request captured;
+      final client = CustomerPortalClient(
+        baseUri: Uri.parse('https://ordering.example/api/customer-portal/'),
+        tokenProvider: () async => 'clerk-token',
+        client: MockClient((request) async {
+          captured = request;
+          return _orderResponse();
+        }),
+      );
+      final api = CustomerPortalApi(client);
 
-    await api.submitOrder(
-      addressId: 'address-1',
-      orderNote: 'Giao sáng',
-      lines: const [CartLine(sku: 'SKU-1', quantity: 2, note: 'Nguyên thùng')],
-      idempotencyKey:
-          'customer-order-submit-123e4567-e89b-42d3-a456-426614174000',
-    );
+      await api.submitOrder(
+        addressId: 'address-1',
+        orderNote: 'Giao sáng',
+        lines: const [
+          CartLine(sku: 'SKU-1', quantity: 2, note: 'Nguyên thùng'),
+        ],
+        idempotencyKey:
+            'customer-order-submit-123e4567-e89b-42d3-a456-426614174000',
+      );
 
-    expect(
-      captured.url.toString(),
-      'https://ordering.example/api/customer-portal/orders',
-    );
-    expect(captured.method, 'POST');
-    expect(
-      captured.headers['Idempotency-Key'],
-      'customer-order-submit-123e4567-e89b-42d3-a456-426614174000',
-    );
-    final body = jsonDecode(captured.body) as Map<String, dynamic>;
-    expect(body['addressId'], 'address-1');
-    expect((body['lines'] as List).single['sku'], 'SKU-1');
-    expect((body['lines'] as List).single['quantity'], 2);
-    client.close();
-  });
+      expect(
+        captured.url.toString(),
+        'https://ordering.example/api/customer-portal/orders',
+      );
+      expect(captured.method, 'POST');
+      expect(
+        captured.headers['Idempotency-Key'],
+        'customer-order-submit-123e4567-e89b-42d3-a456-426614174000',
+      );
+      final body = jsonDecode(captured.body) as Map<String, dynamic>;
+      expect(body['addressId'], 'address-1');
+      expect((body['lines'] as List).single['sku'], 'SKU-1');
+      expect((body['lines'] as List).single['quantity'], 2);
+      client.close();
+    },
+  );
 
   test('cancel uses order cancel BFF path and idempotency header', () async {
     late http.Request captured;

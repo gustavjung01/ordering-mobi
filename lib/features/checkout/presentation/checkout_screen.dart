@@ -73,15 +73,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         });
       }
     } on ApiFailure catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.message;
+
+        });
+      }
     } on Object {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Không tải được thông tin xác nhận đơn.';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Không tải được thông tin xác nhận đơn.';
+
+        });
+      }
     }
   }
 
@@ -130,9 +136,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final cart = widget.repository.cart;
     if (_loading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Xác nhận đơn')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Xác nhận đơn')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (cart.lines.isEmpty) {
@@ -241,10 +247,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               hintText: 'Ví dụ: giao buổi sáng, gọi trước khi giao...',
               border: OutlineInputBorder(),
             ),
-            onEditingComplete: () => widget.repository.saveCheckoutDraft(
-              addressId: _addressId,
-              orderNote: _noteController.text,
-            ),
+            onTapOutside: (_) async {
+              await widget.repository.saveCheckoutDraft(
+                addressId: _addressId,
+                orderNote: _noteController.text,
+              );
+              if (mounted) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              }
+            },
           ),
           Card(
             child: Padding(
@@ -307,9 +318,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final amount = product?.price.status == 'available'
         ? product?.price.amount
         : null;
-    return amount == null
-        ? 'Chờ giá'
-        : formatVnd(amount * line.quantity);
+    return amount == null ? 'Chờ giá' : formatVnd(amount * line.quantity);
   }
 }
 

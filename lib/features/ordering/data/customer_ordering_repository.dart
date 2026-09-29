@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -11,15 +10,12 @@ import '../../../core/session/session_store.dart';
 import '../../../core/storage/ordering_local_store.dart';
 
 class CustomerOrderingRepository extends ChangeNotifier {
-  CustomerOrderingRepository({
-    required CustomerOrderingRemote remote,
-    required OrderingLocalStore localStore,
-    required SecureStringStore secureStore,
+  CustomerOrderingRepository(
+    this._remote,
+    this._localStore,
+    this._secureStore, {
     required String userId,
-  }) : _remote = remote,
-       _localStore = localStore,
-       _secureStore = secureStore,
-       _userScope = Uri.encodeComponent(userId.trim());
+  }) : _userScope = Uri.encodeComponent(userId.trim());
 
   static const _cartStorageKey = 'cart.v1';
   static const _checkoutStorageKey = 'checkout.v1';
@@ -81,7 +77,7 @@ class CustomerOrderingRepository extends ChangeNotifier {
     _allCatalogFuture = future;
     future.then<void>(
       (_) {},
-      onError: (Object _, StackTrace __) {
+      onError: (Object _, StackTrace _) {
         if (identical(_allCatalogFuture, future)) _allCatalogFuture = null;
       },
     );
@@ -124,6 +120,12 @@ class CustomerOrderingRepository extends ChangeNotifier {
         quantity: _clampQuantity(lines[index].quantity + normalizedQuantity),
       );
     } else {
+      if (lines.length >= 200) {
+        throw const ApiFailure(
+          code: 'ORDER_TOO_MANY_LINES',
+          message: 'Giỏ hàng không được vượt quá 200 dòng.',
+        );
+      }
       lines.add(
         CartLine(
           sku: product.sku.trim().toUpperCase(),
@@ -271,14 +273,20 @@ class CustomerOrderingRepository extends ChangeNotifier {
         lines: _cart.lines,
         idempotencyKey: idempotencyKey,
       );
-      await Future.wait([
-        _localStore.delete(_localKey(_cartStorageKey)),
-        _localStore.delete(_localKey(_checkoutStorageKey)),
-        _secureStore.delete(pendingKey),
-      ]);
+      await _localStore.delete(_localKey(_cartStorageKey));
+      try {
+        await _localStore.delete(_localKey(_checkoutStorageKey));
+      } on Object {
+        // A stale checkout draft is harmless once the cart is cleared.
+      }
       _cart = CustomerCart.empty();
       _checkoutDraft = CheckoutDraft.empty();
       notifyListeners();
+      try {
+        await _secureStore.delete(pendingKey);
+      } on Object {
+        // A stale pending key is replaced when a different payload is submitted.
+      }
       return order;
     } on ApiFailure catch (error) {
       if (!error.retryable) await _secureStore.delete(pendingKey);
@@ -324,7 +332,7 @@ class CustomerOrderingRepository extends ChangeNotifier {
       );
     }
 
-    final catalog = await listAllCatalog();
+    final catalog = await listAllCatalog(refresh: true);
     final available = <String, CustomerCatalogItem>{
       for (final item in catalog) item.sku.trim().toUpperCase(): item,
     };
@@ -341,6 +349,10 @@ class CustomerOrderingRepository extends ChangeNotifier {
         continue;
       }
       final current = quantities[sku];
+      if (current == null && quantities.length >= 200) {
+        skippedLineCount += 1;
+        continue;
+      }
       quantities[sku] = CartLine(
         sku: sku,
         quantity: _clampQuantity(
@@ -418,7 +430,6 @@ class CustomerOrderingRepository extends ChangeNotifier {
         quantity: _clampQuantity(line.quantity),
         note: _sanitizeLineNote(line.note),
       );
-      if (bySku.length >= 200) break;
     }
     return CustomerCart(
       lines: bySku.values.toList(growable: false),

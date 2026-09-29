@@ -42,22 +42,31 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
       final orders = results[0] as List<CustomerOrder>;
       orders.sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
-      if (mounted) setState(() {
-        _orders = orders;
-        _products = (results[1] as CustomerCatalogPage).items;
-        _loading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _products = (results[1] as CustomerCatalogPage).items;
+          _loading = false;
+          _error = null;
+
+        });
+      }
     } on ApiFailure catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.message;
+
+        });
+      }
     } on Object {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Không tải được dữ liệu trang chủ.';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Không tải được dữ liệu trang chủ.';
+
+        });
+      }
     }
   }
 

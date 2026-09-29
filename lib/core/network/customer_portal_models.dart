@@ -159,12 +159,11 @@ class CustomerCatalogItem {
       ? unitCode!.trim()
       : 'đơn vị';
 
-  String get categoryLabel =>
-      parentCategoryName?.trim().isNotEmpty == true
-          ? parentCategoryName!.trim()
-          : categoryName?.trim().isNotEmpty == true
-          ? categoryName!.trim()
-          : '';
+  String get categoryLabel => parentCategoryName?.trim().isNotEmpty == true
+      ? parentCategoryName!.trim()
+      : categoryName?.trim().isNotEmpty == true
+      ? categoryName!.trim()
+      : '';
 }
 
 class CustomerCatalogPage {
@@ -243,9 +242,10 @@ class CustomerCart {
 
   factory CustomerCart.fromJson(Map<String, dynamic> json) {
     return CustomerCart(
-      lines: _list(json, 'lines')
-          .map((item) => CartLine.fromJson(_map(item)))
-          .toList(growable: false),
+      lines: _list(
+        json,
+        'lines',
+      ).map((item) => CartLine.fromJson(_map(item))).toList(growable: false),
       updatedAt: _dateTime(json['updatedAt']),
     );
   }
