@@ -27,9 +27,7 @@ class CustomerAuthGate extends StatelessWidget {
         );
       },
       signedOutBuilder: (context, authState) {
-        return CustomerSignInScreen(
-          authClient: ClerkCustomerAuthClient(authState),
-        );
+        return const CustomerSignInScreen();
       },
     );
   }

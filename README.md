@@ -67,6 +67,8 @@ flutter run -d emulator-5556 `
   --dart-define=ORDERING_ASSISTANT_ORIGIN=https://REPLACE_WITH_CUSTOMER_ORDERING_HOST
 ~~~
 
+Màn xác thực signed-out dùng trực tiếp `ClerkAuthentication()` của `clerk_flutter`. Các phương thức đăng nhập, đăng ký, khôi phục mật khẩu và MFA hiển thị theo cấu hình của Clerk instance; mobile không duy trì một form password riêng song song với Clerk.
+
 Trạng thái Clerk được lưu qua `flutter_secure_storage`. Ứng dụng không duy trì một bản raw access token riêng; token gửi Customer Portal được lấy từ phiên Clerk đang hoạt động để tránh hai nguồn session.
 
 Kiểm tra trước khi merge:
