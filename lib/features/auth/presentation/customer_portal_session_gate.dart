@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../app/navigation/app_shell.dart';
 import '../../../core/auth/clerk_customer_auth_client.dart';
 import '../../../core/network/api_failure.dart';
+import '../../../core/network/customer_portal_account_api.dart';
+import '../../../core/network/customer_portal_account_models.dart';
 import '../../../core/network/customer_portal_api.dart';
 import '../../../core/network/customer_portal_client.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../../../core/session/session_store.dart';
 import '../../../core/storage/ordering_local_store.dart';
+import '../../account/data/customer_account_repository.dart';
+import '../../assistant/data/customer_assistant_api.dart';
 import '../../ordering/data/customer_ordering_repository.dart';
 
 class CustomerPortalSessionGate extends StatefulWidget {
@@ -28,8 +32,11 @@ class CustomerPortalSessionGate extends StatefulWidget {
 class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
   late final CustomerPortalClient _portalClient;
   late final CustomerPortalApi _portalApi;
-  late Future<CustomerProfile> _profileFuture;
+  late final CustomerPortalAccountApi _accountApi;
+  late final CustomerAssistantApi _assistantApi;
+  late Future<_PortalSessionData> _sessionFuture;
   CustomerOrderingRepository? _orderingRepository;
+  CustomerAccountRepository? _accountRepository;
 
   @override
   void initState() {
@@ -39,21 +46,24 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
       tokenProvider: widget.authClient.getToken,
     );
     _portalApi = CustomerPortalApi(_portalClient);
-    _profileFuture = _loadSession();
+    _accountApi = CustomerPortalAccountApi(_portalClient);
+    _assistantApi = CustomerAssistantApi(
+      endpoint: widget.baseUri.resolve('/api/assistant/chat'),
+      tokenProvider: widget.authClient.getToken,
+    );
+    _sessionFuture = _loadSession();
   }
 
   @override
   void dispose() {
     _orderingRepository?.dispose();
+    _assistantApi.close();
     _portalClient.close();
     super.dispose();
   }
 
-  Future<CustomerProfile> _loadSession() async {
-    final profileFuture = _portalApi.getProfile();
-    final sessionFuture = widget.authClient.currentSession();
-    final profile = await profileFuture;
-    final session = await sessionFuture;
+  Future<_PortalSessionData> _loadSession() async {
+    final session = await widget.authClient.currentSession();
     if (session == null) {
       throw const ApiFailure(
         code: 'AUTH_REQUIRED',
@@ -63,27 +73,43 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
     }
 
     _orderingRepository?.dispose();
-    final repository = CustomerOrderingRepository(
+    final orderingRepository = CustomerOrderingRepository(
       _portalApi,
       SharedPreferencesOrderingLocalStore(),
       FlutterSecureStringStore(),
       userId: session.userId,
     );
-    await repository.initialize();
-    _orderingRepository = repository;
-    return profile;
+    final accountRepository = CustomerAccountRepository(
+      _accountApi,
+      FlutterSecureStringStore(),
+      userId: session.userId,
+    );
+
+    await orderingRepository.initialize();
+    final lifecycle = await accountRepository.getLifecycle();
+    CustomerProfile? profile;
+    if (lifecycle.isActiveCustomer) {
+      profile = await _portalApi.getProfile();
+    }
+
+    _orderingRepository = orderingRepository;
+    _accountRepository = accountRepository;
+    return _PortalSessionData(
+      lifecycle: lifecycle,
+      profile: profile,
+    );
   }
 
   void _retry() {
     setState(() {
-      _profileFuture = _loadSession();
+      _sessionFuture = _loadSession();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<CustomerProfile>(
-      future: _profileFuture,
+    return FutureBuilder<_PortalSessionData>(
+      future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
@@ -93,11 +119,16 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
           );
         }
 
-        if (snapshot.hasData && _orderingRepository != null) {
+        if (snapshot.hasData &&
+            _orderingRepository != null &&
+            _accountRepository != null) {
           return AppShell(
-            profile: snapshot.data!,
-            repository: _orderingRepository!,
-            customerDisplayName: snapshot.data!.displayName,
+            lifecycle: snapshot.data!.lifecycle,
+            profile: snapshot.data!.profile,
+            orderingRepository: _orderingRepository!,
+            accountRepository: _accountRepository!,
+            assistantApi: _assistantApi,
+            customerDisplayName: snapshot.data!.profile?.displayName,
             onSignOut: widget.authClient.signOut,
           );
         }
@@ -144,4 +175,14 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
       },
     );
   }
+}
+
+class _PortalSessionData {
+  const _PortalSessionData({
+    required this.lifecycle,
+    required this.profile,
+  });
+
+  final PortalLifecycleSnapshot lifecycle;
+  final CustomerProfile? profile;
 }
