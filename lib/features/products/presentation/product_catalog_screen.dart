@@ -42,6 +42,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   int _requestVersion = 0;
   int _visibleGroupCount = _initialVisibleGroups;
   final Map<String, String> _selectedSkuByGroup = {};
+  final Set<String> _requestedPriceVariants = {};
+  bool _priceHydrationScheduled = false;
 
   @override
   void initState() {
@@ -66,7 +68,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     try {
       final values = await Future.wait<Object>([
         CatalogMetadataIndex.shared(),
-        widget.repository.listAllCatalog(refresh: true),
+        widget.repository.listAllCatalog(),
       ]);
       if (!mounted || version != _requestVersion) return;
       setState(() {
@@ -101,6 +103,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         _query = value.trim();
         _visibleGroupCount = _initialVisibleGroups;
       });
+      _scheduleVisiblePriceHydration();
     });
   }
 
@@ -143,6 +146,64 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         .toList(growable: false);
   }
 
+  List<CatalogProductGroup> _visibleGroups(CatalogMetadataIndex metadata) {
+    final filtered = _filteredItems(metadata);
+    final visibleByKey = <String, List<CustomerCatalogItem>>{};
+    for (final item in filtered) {
+      visibleByKey.putIfAbsent(metadata.groupKeyFor(item), () => []).add(item);
+    }
+    final allGroups = <String, CatalogProductGroup>{
+      for (final group in buildCatalogProductGroups(_items, metadata))
+        group.key: group,
+    };
+    final groups = visibleByKey.keys
+        .map((key) => allGroups[key])
+        .whereType<CatalogProductGroup>()
+        .toList(growable: false)
+      ..sort((left, right) => left.name.compareTo(right.name));
+    return groups;
+  }
+
+  void _scheduleVisiblePriceHydration() {
+    if (_priceHydrationScheduled || !mounted) return;
+    _priceHydrationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _priceHydrationScheduled = false;
+      if (mounted) unawaited(_hydrateVisiblePrices());
+    });
+  }
+
+  Future<void> _hydrateVisiblePrices() async {
+    final metadata = _metadata;
+    if (metadata == null || _items.isEmpty) return;
+    final selected = _visibleGroups(metadata)
+        .take(_visibleGroupCount)
+        .map(
+          (group) => group.preferred(
+            selectedSku: _selectedSkuByGroup[group.key],
+            purchaseMode: _purchaseMode,
+          ),
+        )
+        .where((item) => item.variantId?.trim().isNotEmpty == true)
+        .where((item) => _requestedPriceVariants.add(item.variantId!.trim()))
+        .toList(growable: false);
+    if (selected.isEmpty) return;
+
+    try {
+      final resolved = await widget.repository.refreshCatalogPrices(selected);
+      if (!mounted) return;
+      final bySku = {for (final item in resolved) item.sku: item};
+      setState(() {
+        _items = [for (final item in _items) bySku[item.sku] ?? item];
+      });
+    } on Object {
+      for (final item in selected) {
+        final variantId = item.variantId?.trim();
+        if (variantId != null) _requestedPriceVariants.remove(variantId);
+      }
+    }
+  }
+
   Map<String, String> _categoryOptions(CatalogMetadataIndex metadata) {
     final result = <String, String>{};
     for (final item in _items) {
@@ -178,6 +239,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       _productType = null;
       _visibleGroupCount = _initialVisibleGroups;
     });
+    _scheduleVisiblePriceHydration();
   }
 
   void _selectPurchaseMode(String? mode) {
@@ -185,6 +247,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       _purchaseMode = mode;
       _visibleGroupCount = _initialVisibleGroups;
     });
+    _scheduleVisiblePriceHydration();
   }
 
   CustomerCatalogItem? _modeItem(
@@ -242,7 +305,32 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   ) async {
     final metadata = _metadata;
     if (metadata == null) return;
+    var activeGroup = group;
     var selected = initial;
+    try {
+      final resolved = await widget.repository.refreshCatalogPrices(
+        group.products,
+      );
+      if (resolved.isNotEmpty) {
+        final bySku = {for (final item in resolved) item.sku: item};
+        activeGroup = CatalogProductGroup(
+          key: group.key,
+          name: group.name,
+          products: [
+            for (final item in group.products) bySku[item.sku] ?? item,
+          ],
+        );
+        selected = bySku[initial.sku] ?? initial;
+        if (mounted) {
+          setState(() {
+            _items = [for (final item in _items) bySku[item.sku] ?? item];
+          });
+        }
+      }
+    } on Object {
+      // Cached prices remain usable if refresh is temporarily unavailable.
+    }
+    if (!mounted) return;
     var quantity = 1;
 
     await showModalBottomSheet<void>(
@@ -253,11 +341,11 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final variants = group.variantLabels(metadata);
+            final variants = activeGroup.variantLabels(metadata);
             final selectedVariant = metadata.variantFor(selected);
             final variantProducts = selectedVariant.isEmpty
-                ? group.products
-                : group.productsForVariant(metadata, selectedVariant);
+                ? activeGroup.products
+                : activeGroup.productsForVariant(metadata, selectedVariant);
             final sizes =
                 variantProducts
                     .map(metadata.sizeFor)
@@ -265,8 +353,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     .toSet()
                     .toList(growable: false)
                   ..sort();
-            final retail = _modeItem(metadata, group, selected, 'retail');
-            final caseItem = _modeItem(metadata, group, selected, 'case');
+            final retail = _modeItem(metadata, activeGroup, selected, 'retail');
+            final caseItem = _modeItem(metadata, activeGroup, selected, 'case');
 
             void selectProduct(CustomerCatalogItem item) {
               setSheetState(() => selected = item);
@@ -337,7 +425,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                             builder: (context) {
                               final option = _chooseVariant(
                                 metadata,
-                                group,
+                                activeGroup,
                                 variant,
                                 selected,
                               );
@@ -500,22 +588,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       );
     }
 
-    final filtered = _filteredItems(metadata);
-    final visibleByKey = <String, List<CustomerCatalogItem>>{};
-    for (final item in filtered) {
-      visibleByKey.putIfAbsent(metadata.groupKeyFor(item), () => []).add(item);
-    }
-    final allGroups = <String, CatalogProductGroup>{
-      for (final group in buildCatalogProductGroups(_items, metadata))
-        group.key: group,
-    };
-    final groups =
-        visibleByKey.keys
-            .map((key) => allGroups[key])
-            .whereType<CatalogProductGroup>()
-            .toList(growable: false)
-          ..sort((left, right) => left.name.compareTo(right.name));
+    final groups = _visibleGroups(metadata);
     final shownGroups = groups.take(_visibleGroupCount).toList(growable: false);
+    _scheduleVisiblePriceHydration();
     final categories = _categoryOptions(metadata);
     final productTypes = _productTypeOptions(metadata);
     final columns = MediaQuery.sizeOf(context).width >= 720 ? 3 : 2;
@@ -674,8 +749,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   group: group,
                   selected: selected,
                   metadata: metadata,
-                  retail: _modeItem(metadata, group, selected, 'retail'),
-                  caseItem: _modeItem(metadata, group, selected, 'case'),
+                  retail: _modeItem(metadata, activeGroup, selected, 'retail'),
+                  caseItem: _modeItem(metadata, activeGroup, selected, 'case'),
                   onOpen: () => _openGroup(group, selected),
                   onSelect: (item) {
                     setState(() => _selectedSkuByGroup[group.key] = item.sku);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_failure.dart';
@@ -131,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
         _error = null;
       });
+      unawaited(_hydrateHomePrices(catalog.items));
     } on ApiFailure catch (error) {
       if (!mounted) return;
       setState(() {
@@ -143,6 +146,27 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
         _error = 'Không tải được dữ liệu trang chủ.';
       });
+    }
+  }
+
+  Future<void> _hydrateHomePrices(
+    Iterable<CustomerCatalogItem> source,
+  ) async {
+    final pending = source
+        .where((item) => item.variantId?.trim().isNotEmpty == true)
+        .take(24)
+        .toList(growable: false);
+    if (pending.isEmpty) return;
+
+    try {
+      final resolved = await widget.repository.refreshCatalogPrices(pending);
+      if (!mounted) return;
+      final bySku = {for (final item in resolved) item.sku: item};
+      setState(() {
+        _products = [for (final item in _products) bySku[item.sku] ?? item];
+      });
+    } on Object {
+      // Home keeps cached prices when background refresh is unavailable.
     }
   }
 

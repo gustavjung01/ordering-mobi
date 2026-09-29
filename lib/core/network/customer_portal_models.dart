@@ -71,6 +71,13 @@ class CustomerCategory {
   final String name;
   final String shortName;
   final String? parentCategoryId;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'shortName': shortName,
+    'parentCategoryId': parentCategoryId,
+  };
 }
 
 class CustomerProductPrice {
@@ -93,6 +100,12 @@ class CustomerProductPrice {
   final String status;
 
   bool get isAvailable => status == 'available' && amount != null;
+
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'currency': currency,
+    'status': status,
+  };
 }
 
 class CustomerCatalogItem {
@@ -120,7 +133,13 @@ class CustomerCatalogItem {
       sku: _string(json, 'sku'),
       name: _string(json, 'name'),
       variantName: _string(json, 'variantName'),
-      price: CustomerProductPrice.fromJson(_map(json['price'])),
+      price: json['price'] is Map
+          ? CustomerProductPrice.fromJson(_map(json['price']))
+          : const CustomerProductPrice(
+              amount: null,
+              currency: 'VND',
+              status: 'customer_price_pending',
+            ),
       variantId: _optionalString(json['variantId']),
       productId: _optionalString(json['productId']),
       productCode: _optionalString(json['productCode']),
@@ -164,6 +183,79 @@ class CustomerCatalogItem {
       : categoryName?.trim().isNotEmpty == true
       ? categoryName!.trim()
       : '';
+
+  CustomerCatalogItem copyWithPrice(CustomerProductPrice nextPrice) {
+    return CustomerCatalogItem(
+      sku: sku,
+      name: name,
+      variantName: variantName,
+      price: nextPrice,
+      variantId: variantId,
+      productId: productId,
+      productCode: productCode,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      parentCategoryId: parentCategoryId,
+      parentCategoryName: parentCategoryName,
+      brandName: brandName,
+      purchaseMode: purchaseMode,
+      unitCode: unitCode,
+      unitName: unitName,
+      conversionToBase: conversionToBase,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'sku': sku,
+    'name': name,
+    'variantName': variantName,
+    'price': price.toJson(),
+    'variantId': variantId,
+    'productId': productId,
+    'productCode': productCode,
+    'categoryId': categoryId,
+    'categoryName': categoryName,
+    'parentCategoryId': parentCategoryId,
+    'parentCategoryName': parentCategoryName,
+    'brandName': brandName,
+    'purchaseMode': purchaseMode,
+    'unitCode': unitCode,
+    'unitName': unitName,
+    'conversionToBase': conversionToBase,
+  };
+}
+
+class CustomerCatalogSync {
+  const CustomerCatalogSync({
+    required this.cursor,
+    required this.full,
+    required this.upserts,
+    required this.removeVariantIds,
+    required this.categories,
+  });
+
+  factory CustomerCatalogSync.fromJson(Map<String, dynamic> json) {
+    return CustomerCatalogSync(
+      cursor: _string(json, 'cursor'),
+      full: json['full'] == true,
+      upserts: _list(json, 'upserts')
+          .map((item) => CustomerCatalogItem.fromJson(_map(item)))
+          .toList(growable: false),
+      removeVariantIds: _list(json, 'removeVariantIds')
+          .map((value) => value.toString())
+          .where((value) => value.trim().isNotEmpty)
+          .toList(growable: false),
+      categories: _list(json, 'categories')
+          .map((item) => CustomerCategory.fromJson(_map(item)))
+          .toList(growable: false),
+    );
+  }
+
+  final String cursor;
+  final bool full;
+  final List<CustomerCatalogItem> upserts;
+  final List<String> removeVariantIds;
+  final List<CustomerCategory> categories;
 }
 
 class CustomerCatalogPage {

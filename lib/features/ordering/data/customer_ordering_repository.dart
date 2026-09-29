@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_api.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../../../core/session/session_store.dart';
+import '../../../core/storage/catalog_local_store.dart';
 import '../../../core/storage/ordering_local_store.dart';
 
 class CustomerOrderingRepository extends ChangeNotifier {
@@ -15,7 +17,9 @@ class CustomerOrderingRepository extends ChangeNotifier {
     this._localStore,
     this._secureStore, {
     required String userId,
-  }) : _userScope = Uri.encodeComponent(userId.trim());
+    CustomerCatalogStore? catalogStore,
+  }) : _userScope = Uri.encodeComponent(userId.trim()),
+       _catalogStore = catalogStore ?? MemoryCustomerCatalogStore();
 
   static const _cartStorageKey = 'cart.v1';
   static const _checkoutStorageKey = 'checkout.v1';
@@ -26,11 +30,16 @@ class CustomerOrderingRepository extends ChangeNotifier {
   final OrderingLocalStore _localStore;
   final SecureStringStore _secureStore;
   final String _userScope;
+  final CustomerCatalogStore _catalogStore;
 
   CustomerCart _cart = CustomerCart.empty();
   CheckoutDraft _checkoutDraft = CheckoutDraft.empty();
   bool _initialized = false;
-  Future<List<CustomerCatalogItem>>? _allCatalogFuture;
+  List<CustomerCatalogItem> _catalogItems = const [];
+  List<CustomerCategory> _catalogCategories = const [];
+  String? _catalogCursor;
+  Future<void>? _catalogSyncFuture;
+  bool _backgroundCatalogSyncStarted = false;
 
   bool get initialized => _initialized;
   CustomerCart get cart => _cart;
@@ -47,8 +56,51 @@ class CustomerOrderingRepository extends ChangeNotifier {
     ]);
     _cart = _decodeCart(values[0]);
     _checkoutDraft = _decodeCheckoutDraft(values[1]);
+    _applyCatalogSnapshot(await _catalogStore.read(_userScope));
     _initialized = true;
     notifyListeners();
+  }
+
+  void _applyCatalogSnapshot(CatalogLocalSnapshot snapshot) {
+    _catalogCursor = snapshot.cursor;
+    _catalogItems = List.unmodifiable(snapshot.items);
+    _catalogCategories = List.unmodifiable(snapshot.categories);
+  }
+
+  Future<void> _syncCatalog({bool forceFull = false}) {
+    final current = _catalogSyncFuture;
+    if (current != null) return current;
+
+    final future = () async {
+      final sync = await _remote.syncCatalog(
+        since: forceFull ? null : _catalogCursor,
+      );
+      await _catalogStore.applySync(_userScope, sync);
+      _applyCatalogSnapshot(await _catalogStore.read(_userScope));
+    }();
+    _catalogSyncFuture = future;
+    return future.whenComplete(() {
+      if (identical(_catalogSyncFuture, future)) _catalogSyncFuture = null;
+    });
+  }
+
+  Future<void> _ensureCatalog({bool refresh = false}) async {
+    if (_catalogItems.isEmpty) {
+      await _syncCatalog(forceFull: true);
+      return;
+    }
+    if (refresh) {
+      await _syncCatalog();
+      return;
+    }
+    if (!_backgroundCatalogSyncStarted) {
+      _backgroundCatalogSyncStarted = true;
+      unawaited(
+        _syncCatalog().catchError((Object _) {
+          _backgroundCatalogSyncStarted = false;
+        }),
+      );
+    }
   }
 
   Future<CustomerCatalogPage> listCatalog({
@@ -58,55 +110,104 @@ class CustomerOrderingRepository extends ChangeNotifier {
     String? categoryId,
     String? purchaseMode,
     bool includeCategories = true,
-  }) {
-    return _remote.listCatalog(
-      limit: limit,
-      offset: offset,
-      search: search,
-      categoryId: categoryId,
-      purchaseMode: purchaseMode,
-      includeCategories: includeCategories,
+  }) async {
+    await _ensureCatalog();
+    final normalizedSearch = search?.trim().toLowerCase() ?? '';
+    final normalizedCategory = categoryId?.trim() ?? '';
+    final normalizedMode = purchaseMode?.trim().toLowerCase() ?? '';
+    final filtered = _catalogItems.where((item) {
+      if (normalizedCategory.isNotEmpty &&
+          item.categoryId != normalizedCategory &&
+          item.parentCategoryId != normalizedCategory) {
+        return false;
+      }
+      if (normalizedMode.isNotEmpty && item.purchaseMode != normalizedMode) {
+        return false;
+      }
+      if (normalizedSearch.isNotEmpty) {
+        final haystack = [
+          item.sku,
+          item.productCode ?? '',
+          item.name,
+          item.variantName,
+          item.categoryName ?? '',
+          item.parentCategoryName ?? '',
+          item.brandName ?? '',
+        ].join(' ').toLowerCase();
+        if (!haystack.contains(normalizedSearch)) return false;
+      }
+      return true;
+    }).toList(growable: false)
+      ..sort((left, right) {
+        final product = (left.productCode ?? left.sku).compareTo(
+          right.productCode ?? right.sku,
+        );
+        return product != 0 ? product : left.sku.compareTo(right.sku);
+      });
+
+    final safeLimit = limit < 1 ? 1 : (limit > 100 ? 100 : limit);
+    final safeOffset = offset < 0 ? 0 : offset;
+    final end = safeOffset + safeLimit < filtered.length
+        ? safeOffset + safeLimit
+        : filtered.length;
+    final page = safeOffset >= filtered.length
+        ? const <CustomerCatalogItem>[]
+        : filtered.sublist(safeOffset, end);
+    return CustomerCatalogPage(
+      items: List.unmodifiable(page),
+      categories: includeCategories
+          ? List.unmodifiable(_catalogCategories)
+          : const [],
+      hasMore: end < filtered.length,
+      limit: safeLimit,
+      offset: safeOffset,
     );
   }
 
-  Future<List<CustomerCatalogItem>> listAllCatalog({bool refresh = false}) {
-    if (refresh) _allCatalogFuture = null;
-    final current = _allCatalogFuture;
-    if (current != null) return current;
-    final future = _remote.listAllCatalog();
-    _allCatalogFuture = future;
-    future.then<void>(
-      (_) {},
-      onError: (Object _, StackTrace _) {
-        if (identical(_allCatalogFuture, future)) _allCatalogFuture = null;
-      },
-    );
-    return future;
+  Future<List<CustomerCatalogItem>> listAllCatalog({bool refresh = false}) async {
+    await _ensureCatalog(refresh: refresh);
+    return List.unmodifiable(_catalogItems);
+  }
+
+  Future<List<CustomerCatalogItem>> refreshCatalogPrices(
+    Iterable<CustomerCatalogItem> items,
+  ) async {
+    final requested = items.toList(growable: false);
+    final prices = await _remote.resolveCatalogPrices(requested);
+    if (prices.isEmpty) return requested;
+
+    await _catalogStore.updatePrices(_userScope, prices);
+    _catalogItems = List.unmodifiable([
+      for (final item in _catalogItems)
+        if (item.variantId != null && prices.containsKey(item.variantId))
+          item.copyWithPrice(prices[item.variantId]!)
+        else
+          item,
+    ]);
+
+    return [
+      for (final item in requested)
+        if (item.variantId != null && prices.containsKey(item.variantId))
+          item.copyWithPrice(prices[item.variantId]!)
+        else
+          item,
+    ];
   }
 
   Future<List<CustomerCatalogItem?>> productsForSkus(
     Iterable<String> skus,
   ) async {
+    await _ensureCatalog();
+    final bySku = <String, CustomerCatalogItem>{
+      for (final item in _catalogItems) item.sku.trim().toUpperCase(): item,
+    };
     final unique = <String>[];
     final seen = <String>{};
     for (final sku in skus) {
       final normalized = sku.trim().toUpperCase();
       if (normalized.isNotEmpty && seen.add(normalized)) unique.add(normalized);
     }
-
-    final results = <String, CustomerCatalogItem?>{};
-    const batchSize = 8;
-    for (var start = 0; start < unique.length; start += batchSize) {
-      final end = start + batchSize < unique.length
-          ? start + batchSize
-          : unique.length;
-      final batch = unique.sublist(start, end);
-      final products = await Future.wait(batch.map(_remote.getProductBySku));
-      for (var index = 0; index < batch.length; index += 1) {
-        results[batch[index]] = products[index];
-      }
-    }
-    return unique.map((sku) => results[sku]).toList(growable: false);
+    return unique.map((sku) => bySku[sku]).toList(growable: false);
   }
 
   Future<void> addProduct(
@@ -386,6 +487,12 @@ class CustomerOrderingRepository extends ChangeNotifier {
       addedLineCount: addedLineCount,
       skippedLineCount: skippedLineCount,
     );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_catalogStore.close());
+    super.dispose();
   }
 
   CustomerCart _decodeCart(String? value) {

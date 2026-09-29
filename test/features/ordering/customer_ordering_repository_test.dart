@@ -72,6 +72,27 @@ class _FakeRemote extends CustomerOrderingRemote {
       _order(idempotencyKey: 'submit-key');
 
   @override
+  Future<CustomerCatalogSync> syncCatalog({String? since}) async {
+    return CustomerCatalogSync(
+      cursor: DateTime.utc(2026, 9, 29).toIso8601String(),
+      full: since == null,
+      upserts: catalog,
+      removeVariantIds: const [],
+      categories: const [],
+    );
+  }
+
+  @override
+  Future<Map<String, CustomerProductPrice>> resolveCatalogPrices(
+    Iterable<CustomerCatalogItem> items,
+  ) async {
+    return {
+      for (final item in items)
+        if (item.variantId != null) item.variantId!: item.price,
+    };
+  }
+
+  @override
   Future<List<CustomerCatalogItem>> listAllCatalog() async => catalog;
 }
 
@@ -231,6 +252,7 @@ void main() {
       ..catalog = const [
         CustomerCatalogItem(
           sku: 'SKU-1',
+          variantId: '11111111-1111-4111-8111-111111111111',
           name: 'Sản phẩm 1',
           variantName: 'Gói',
           price: CustomerProductPrice(

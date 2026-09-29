@@ -17,6 +17,13 @@ abstract class CustomerOrderingRemote {
   Future<CustomerCatalogItem?> getProductBySku(String sku) =>
       throw UnimplementedError();
 
+  Future<CustomerCatalogSync> syncCatalog({String? since}) =>
+      throw UnimplementedError();
+
+  Future<Map<String, CustomerProductPrice>> resolveCatalogPrices(
+    Iterable<CustomerCatalogItem> items,
+  ) => throw UnimplementedError();
+
   Future<List<CustomerCatalogItem>> listAllCatalog() =>
       throw UnimplementedError();
 
@@ -140,6 +147,67 @@ class CustomerPortalApi extends CustomerOrderingRemote {
       if (reachedEnd) break;
     }
     return List.unmodifiable(items);
+  }
+
+
+  @override
+  Future<CustomerCatalogSync> syncCatalog({String? since}) async {
+    final parameters = <String, String>{
+      if (since?.trim().isNotEmpty == true) 'since': since!.trim(),
+    };
+    final query = Uri(queryParameters: parameters).query;
+    final path = query.isEmpty ? 'catalog-sync' : 'catalog-sync?$query';
+    final data = await _client.requestData('GET', path);
+    try {
+      return CustomerCatalogSync.fromJson(_map(data['catalog']));
+    } on FormatException {
+      throw _invalidResponse();
+    }
+  }
+
+  @override
+  Future<Map<String, CustomerProductPrice>> resolveCatalogPrices(
+    Iterable<CustomerCatalogItem> items,
+  ) async {
+    final byVariant = <String, CustomerCatalogItem>{};
+    for (final item in items) {
+      final variantId = item.variantId?.trim() ?? '';
+      if (variantId.isNotEmpty) byVariant[variantId] = item;
+    }
+    final variantIds = byVariant.keys.toList(growable: false);
+    if (variantIds.isEmpty) return const {};
+
+    final prices = <String, CustomerProductPrice>{};
+    const batchSize = 100;
+    for (var start = 0; start < variantIds.length; start += batchSize) {
+      final end = start + batchSize < variantIds.length
+          ? start + batchSize
+          : variantIds.length;
+      final batch = variantIds.sublist(start, end);
+      final data = await _client.requestData(
+        'POST',
+        'catalog/prices',
+        body: {
+          'items': [
+            for (final variantId in batch)
+              {'variantId': variantId, 'quantity': '1'},
+          ],
+        },
+      );
+      final rawPrices = data['prices'];
+      if (rawPrices is! List) throw _invalidResponse();
+      try {
+        for (final raw in rawPrices) {
+          final row = _map(raw);
+          final variantId = row['variantId']?.toString().trim() ?? '';
+          if (variantId.isEmpty) continue;
+          prices[variantId] = CustomerProductPrice.fromJson(_map(row['price']));
+        }
+      } on FormatException {
+        throw _invalidResponse();
+      }
+    }
+    return Map.unmodifiable(prices);
   }
 
   @override

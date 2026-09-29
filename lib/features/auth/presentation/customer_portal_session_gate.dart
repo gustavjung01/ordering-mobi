@@ -9,6 +9,7 @@ import '../../../core/network/customer_portal_api.dart';
 import '../../../core/network/customer_portal_client.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../../../core/session/session_store.dart';
+import '../../../core/storage/catalog_local_store.dart';
 import '../../../core/storage/ordering_local_store.dart';
 import '../../account/data/customer_account_repository.dart';
 import '../../assistant/data/customer_assistant_api.dart';
@@ -85,6 +86,7 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
       SharedPreferencesOrderingLocalStore(),
       FlutterSecureStringStore(),
       userId: session.userId,
+      catalogStore: SqliteCustomerCatalogStore(),
     );
     final accountRepository = CustomerAccountRepository(
       _accountApi,
