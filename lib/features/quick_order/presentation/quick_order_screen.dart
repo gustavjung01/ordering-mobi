@@ -33,6 +33,7 @@ class _QuickOrderScreenState extends State<QuickOrderScreen> {
   String? _error;
   String? _addingSku;
   int _requestVersion = 0;
+  final Set<String> _requestedPriceVariants = {};
 
   @override
   void initState() {
@@ -107,6 +108,7 @@ class _QuickOrderScreenState extends State<QuickOrderScreen> {
         _loadingMore = false;
         _error = null;
       });
+      unawaited(_hydratePrices(page.items));
     } on ApiFailure catch (error) {
       if (!mounted || version != _requestVersion) return;
       setState(() {
@@ -121,6 +123,28 @@ class _QuickOrderScreenState extends State<QuickOrderScreen> {
         _loadingMore = false;
         _error = 'Không tải được danh sách đặt nhanh.';
       });
+    }
+  }
+
+  Future<void> _hydratePrices(Iterable<CustomerCatalogItem> source) async {
+    final pending = source
+        .where((item) => item.variantId?.trim().isNotEmpty == true)
+        .where((item) => _requestedPriceVariants.add(item.variantId!.trim()))
+        .toList(growable: false);
+    if (pending.isEmpty) return;
+
+    try {
+      final resolved = await widget.repository.refreshCatalogPrices(pending);
+      if (!mounted) return;
+      final bySku = {for (final item in resolved) item.sku: item};
+      setState(() {
+        _items = [for (final item in _items) bySku[item.sku] ?? item];
+      });
+    } on Object {
+      for (final item in pending) {
+        final variantId = item.variantId?.trim();
+        if (variantId != null) _requestedPriceVariants.remove(variantId);
+      }
     }
   }
 
