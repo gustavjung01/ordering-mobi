@@ -7,7 +7,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$CanonicalUpdateBaseUrl = "https://pub-381648426a2447a7a5edd970ca02d14e.r2.dev/ordering"
+
 $UpdateBaseUrl = $UpdateBaseUrl.Trim().TrimEnd("/")
+if (-not [string]::Equals(
+    $UpdateBaseUrl,
+    $CanonicalUpdateBaseUrl,
+    [StringComparison]::OrdinalIgnoreCase
+)) {
+    throw "UpdateBaseUrl must match the Ordering Key Manager public update base: $CanonicalUpdateBaseUrl"
+}
 $uri = $null
 if (-not [Uri]::TryCreate($UpdateBaseUrl, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne "https") {
     throw "UpdateBaseUrl must be a public HTTPS URL."
@@ -42,6 +51,16 @@ $apkUri = $null
 if (-not [Uri]::TryCreate($apkUrl, [UriKind]::Absolute, [ref]$apkUri) -or
     $apkUri.Scheme -ne "https") {
     throw "Published APK URL is invalid."
+}
+
+$expectedApkName = "Ordering-$version.apk"
+$basePath = $uri.AbsolutePath.TrimEnd("/") + "/"
+if (-not [string]::Equals($apkUri.Scheme, $uri.Scheme, [StringComparison]::OrdinalIgnoreCase) -or
+    -not [string]::Equals($apkUri.Host, $uri.Host, [StringComparison]::OrdinalIgnoreCase) -or
+    $apkUri.Port -ne $uri.Port -or
+    -not $apkUri.AbsolutePath.StartsWith($basePath, [StringComparison]::Ordinal) -or
+    [IO.Path]::GetFileName($apkUri.AbsolutePath) -ne $expectedApkName) {
+    throw "Published APK URL must point to $expectedApkName under the Ordering public update base."
 }
 
 $tempApk = Join-Path ([IO.Path]::GetTempPath()) "ordering-publication-check-$([Guid]::NewGuid().ToString('N')).apk"
