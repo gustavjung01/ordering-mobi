@@ -736,7 +736,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 crossAxisCount: columns,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: .57,
+                childAspectRatio: .70,
               ),
               itemBuilder: (context, index) {
                 final group = shownGroups[index];
@@ -812,15 +812,8 @@ class _CatalogFamilyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final variants = group.variantLabels(metadata);
-    final sizes = group.sizeLabels(metadata);
-    final subtitle = [
-      metadata.productTypeFor(selected),
-      variants.length > 1
-          ? '${variants.length} vị / loại'
-          : metadata.variantFor(selected),
-      sizes.length > 1 ? '${sizes.length} size' : metadata.sizeFor(selected),
-    ].where((value) => value.isNotEmpty).join(' · ');
+    final priceAvailable =
+        selected.price.isAvailable && selected.price.amount != null;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -828,7 +821,7 @@ class _CatalogFamilyCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.all(9),
+          padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -836,68 +829,32 @@ class _CatalogFamilyCard extends StatelessWidget {
                 child: CatalogProductVisual(
                   item: selected,
                   metadata: metadata,
-                  size: 108,
-                  borderRadius: 16,
+                  size: 96,
+                  borderRadius: 15,
                 ),
               ),
-              const SizedBox(height: 8),
-              if (metadata.brandFor(selected).isNotEmpty)
-                Text(
-                  metadata.brandFor(selected),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 7),
               Text(
                 group.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle.isEmpty ? selected.unitLabel : subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const Spacer(),
-              if (metadata.variantFor(selected).isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 5),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    metadata.variantFor(selected),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 5),
               Text(
                 _priceLabel(selected),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: priceAvailable
+                      ? Theme.of(context).colorScheme.primary
+                      : const Color(0xFFB77900),
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 6),
+              const Spacer(),
               Row(
                 children: [
                   Expanded(
