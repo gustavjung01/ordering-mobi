@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -132,8 +131,7 @@ class CanonicalProductMetadata {
   final String flavor;
   final String size;
 
-  String get categoryId =>
-      _categoryIdByIndustryKey[industryKey] ?? industryKey;
+  String get categoryId => _categoryIdByIndustryKey[industryKey] ?? industryKey;
 
   String get seriesName => _seriesName(productType, brand);
 
@@ -199,9 +197,7 @@ class CatalogMetadataIndex {
 
   String familySkuFor(CustomerCatalogItem item) {
     final productCode = item.productCode?.trim().toUpperCase() ?? '';
-    return productCode.isNotEmpty
-        ? productCode
-        : item.sku.trim().toUpperCase();
+    return productCode.isNotEmpty ? productCode : item.sku.trim().toUpperCase();
   }
 
   CanonicalProductMetadata? metadataFor(CustomerCatalogItem item) {
@@ -272,17 +268,19 @@ class CatalogMetadataIndex {
   }
 
   String searchableTextFor(CustomerCatalogItem item) {
-    return _normalize([
-      item.sku,
-      item.productCode ?? '',
-      item.name,
-      item.variantName,
-      brandFor(item),
-      variantFor(item),
-      sizeFor(item),
-      productTypeFor(item),
-      categoryLabelFor(item),
-    ].join(' '));
+    return _normalize(
+      [
+        item.sku,
+        item.productCode ?? '',
+        item.name,
+        item.variantName,
+        brandFor(item),
+        variantFor(item),
+        sizeFor(item),
+        productTypeFor(item),
+        categoryLabelFor(item),
+      ].join(' '),
+    );
   }
 
   String normalizeQuery(String value) => _normalize(value);
@@ -327,22 +325,24 @@ class CatalogProductGroup {
   }
 
   List<String> variantLabels(CatalogMetadataIndex metadata) {
-    final values = products
-        .map(metadata.variantFor)
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final values =
+        products
+            .map(metadata.variantFor)
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     return values;
   }
 
   List<String> sizeLabels(CatalogMetadataIndex metadata) {
-    final values = products
-        .map(metadata.sizeFor)
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final values =
+        products
+            .map(metadata.sizeFor)
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     return values;
   }
 
@@ -359,7 +359,7 @@ class CatalogProductGroup {
 List<CustomerCatalogItem> dedupeCatalogItems(
   Iterable<CustomerCatalogItem> items,
 ) {
-  final bySku = LinkedHashMap<String, CustomerCatalogItem>();
+  final bySku = <String, CustomerCatalogItem>{};
   for (final item in items) {
     final sku = item.sku.trim().toUpperCase();
     if (sku.isEmpty) continue;
@@ -372,31 +372,36 @@ List<CatalogProductGroup> buildCatalogProductGroups(
   Iterable<CustomerCatalogItem> source,
   CatalogMetadataIndex metadata,
 ) {
-  final groups = LinkedHashMap<String, List<CustomerCatalogItem>>();
+  final groups = <String, List<CustomerCatalogItem>>{};
   for (final item in dedupeCatalogItems(source)) {
     groups.putIfAbsent(metadata.groupKeyFor(item), () => []).add(item);
   }
 
-  final result = groups.entries.map((entry) {
-    final products = [...entry.value]
-      ..sort((left, right) {
-        final variant = metadata
-            .variantFor(left)
-            .compareTo(metadata.variantFor(right));
-        if (variant != 0) return variant;
-        final size = metadata.sizeFor(left).compareTo(metadata.sizeFor(right));
-        if (size != 0) return size;
-        if (left.purchaseMode != right.purchaseMode) {
-          return left.purchaseMode == 'retail' ? -1 : 1;
-        }
-        return left.sku.compareTo(right.sku);
-      });
-    return CatalogProductGroup(
-      key: entry.key,
-      name: metadata.groupNameFor(products.first),
-      products: List.unmodifiable(products),
-    );
-  }).toList(growable: false)
-    ..sort((left, right) => left.name.compareTo(right.name));
+  final result =
+      groups.entries
+          .map((entry) {
+            final products = [...entry.value]
+              ..sort((left, right) {
+                final variant = metadata
+                    .variantFor(left)
+                    .compareTo(metadata.variantFor(right));
+                if (variant != 0) return variant;
+                final size = metadata
+                    .sizeFor(left)
+                    .compareTo(metadata.sizeFor(right));
+                if (size != 0) return size;
+                if (left.purchaseMode != right.purchaseMode) {
+                  return left.purchaseMode == 'retail' ? -1 : 1;
+                }
+                return left.sku.compareTo(right.sku);
+              });
+            return CatalogProductGroup(
+              key: entry.key,
+              name: metadata.groupNameFor(products.first),
+              products: List.unmodifiable(products),
+            );
+          })
+          .toList(growable: false)
+        ..sort((left, right) => left.name.compareTo(right.name));
   return result;
 }

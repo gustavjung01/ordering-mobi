@@ -121,24 +121,26 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
 
   List<CustomerCatalogItem> _filteredItems(CatalogMetadataIndex metadata) {
     final normalizedQuery = metadata.normalizeQuery(_query);
-    return _items.where((item) {
-      if (_categoryId != null &&
-          metadata.categoryIdFor(item) != _categoryId) {
-        return false;
-      }
-      if (_productType != null &&
-          metadata.productTypeFor(item) != _productType) {
-        return false;
-      }
-      if (_purchaseMode != null && item.purchaseMode != _purchaseMode) {
-        return false;
-      }
-      if (normalizedQuery.isNotEmpty &&
-          !metadata.searchableTextFor(item).contains(normalizedQuery)) {
-        return false;
-      }
-      return true;
-    }).toList(growable: false);
+    return _items
+        .where((item) {
+          if (_categoryId != null &&
+              metadata.categoryIdFor(item) != _categoryId) {
+            return false;
+          }
+          if (_productType != null &&
+              metadata.productTypeFor(item) != _productType) {
+            return false;
+          }
+          if (_purchaseMode != null && item.purchaseMode != _purchaseMode) {
+            return false;
+          }
+          if (normalizedQuery.isNotEmpty &&
+              !metadata.searchableTextFor(item).contains(normalizedQuery)) {
+            return false;
+          }
+          return true;
+        })
+        .toList(growable: false);
   }
 
   Map<String, String> _categoryOptions(CatalogMetadataIndex metadata) {
@@ -155,17 +157,18 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   }
 
   List<String> _productTypeOptions(CatalogMetadataIndex metadata) {
-    final values = _items
-        .where(
-          (item) =>
-              _categoryId == null ||
-              metadata.categoryIdFor(item) == _categoryId,
-        )
-        .map(metadata.productTypeFor)
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final values =
+        _items
+            .where(
+              (item) =>
+                  _categoryId == null ||
+                  metadata.categoryIdFor(item) == _categoryId,
+            )
+            .map(metadata.productTypeFor)
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     return values;
   }
 
@@ -255,12 +258,13 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
             final variantProducts = selectedVariant.isEmpty
                 ? group.products
                 : group.productsForVariant(metadata, selectedVariant);
-            final sizes = variantProducts
-                .map(metadata.sizeFor)
-                .where((value) => value.isNotEmpty)
-                .toSet()
-                .toList(growable: false)
-              ..sort();
+            final sizes =
+                variantProducts
+                    .map(metadata.sizeFor)
+                    .where((value) => value.isNotEmpty)
+                    .toSet()
+                    .toList(growable: false)
+                  ..sort();
             final retail = _modeItem(metadata, group, selected, 'retail');
             final caseItem = _modeItem(metadata, group, selected, 'case');
 
@@ -499,22 +503,19 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     final filtered = _filteredItems(metadata);
     final visibleByKey = <String, List<CustomerCatalogItem>>{};
     for (final item in filtered) {
-      visibleByKey
-          .putIfAbsent(metadata.groupKeyFor(item), () => [])
-          .add(item);
+      visibleByKey.putIfAbsent(metadata.groupKeyFor(item), () => []).add(item);
     }
     final allGroups = <String, CatalogProductGroup>{
       for (final group in buildCatalogProductGroups(_items, metadata))
         group.key: group,
     };
-    final groups = visibleByKey.keys
-        .map((key) => allGroups[key])
-        .whereType<CatalogProductGroup>()
-        .toList(growable: false)
-      ..sort((left, right) => left.name.compareTo(right.name));
-    final shownGroups = groups
-        .take(_visibleGroupCount)
-        .toList(growable: false);
+    final groups =
+        visibleByKey.keys
+            .map((key) => allGroups[key])
+            .whereType<CatalogProductGroup>()
+            .toList(growable: false)
+          ..sort((left, right) => left.name.compareTo(right.name));
+    final shownGroups = groups.take(_visibleGroupCount).toList(growable: false);
     final categories = _categoryOptions(metadata);
     final productTypes = _productTypeOptions(metadata);
     final columns = MediaQuery.sizeOf(context).width >= 720 ? 3 : 2;
