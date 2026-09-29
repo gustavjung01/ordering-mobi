@@ -109,7 +109,10 @@ class CustomerOrderingRepository extends ChangeNotifier {
     return unique.map((sku) => results[sku]).toList(growable: false);
   }
 
-  Future<void> addProduct(CustomerCatalogItem product, {int quantity = 1}) async {
+  Future<void> addProduct(
+    CustomerCatalogItem product, {
+    int quantity = 1,
+  }) async {
     final normalizedQuantity = _clampQuantity(quantity);
     final lines = [..._cart.lines];
     final index = lines.indexWhere(
