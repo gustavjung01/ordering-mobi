@@ -31,18 +31,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/hero-app-customer.jpg';
 
   static const _categoryImages = <String, String>{
-    'milk-tea':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-tra-sua.webp',
-    'spicy-noodle':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-mi-cay.webp',
-    'frozen':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-dong-lanh.webp',
-    'snacks':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-an-vat.webp',
-    'packaging':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-bao-bi.webp',
-    'sauce-seasoning':
-        'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-gia-vi.webp',
+    'milk-tea': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-tra-sua.webp',
+    'spicy-noodle': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-mi-cay.webp',
+    'frozen': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-dong-lanh.webp',
+    'snacks': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-an-vat.webp',
+    'packaging': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-bao-bi.webp',
+    'sauce-seasoning': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-gia-vi.webp',
   };
 
   List<CustomerOrder> _orders = const [];
@@ -186,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final category = _categories[index];
                     return _CategoryCard(
@@ -211,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: groups.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final group = groups[index];
                     final item = group.preferred(purchaseMode: 'retail');
@@ -376,7 +370,7 @@ class _SearchLauncher extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         onTap: onTap,
         child: Container(
-          minHeight: 50,
+          constraints: const BoxConstraints(minHeight: 50),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             border: Border.all(color: const Color(0xFFD8E1DA)),

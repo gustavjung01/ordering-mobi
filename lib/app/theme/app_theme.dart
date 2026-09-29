@@ -12,19 +12,20 @@ abstract final class AppTheme {
   static const canvas = Color(0xFFF7F8F6);
 
   static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: brand,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: brand,
-      onPrimary: Colors.white,
-      secondary: accent,
-      onSecondary: ink,
-      surface: Colors.white,
-      onSurface: ink,
-      outline: border,
-      error: const Color(0xFFC0392B),
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: brand,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: brand,
+          onPrimary: Colors.white,
+          secondary: accent,
+          onSecondary: ink,
+          surface: Colors.white,
+          onSurface: ink,
+          outline: border,
+          error: const Color(0xFFC0392B),
+        );
 
     return ThemeData(
       useMaterial3: true,
