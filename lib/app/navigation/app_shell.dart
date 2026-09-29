@@ -112,8 +112,18 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _openAssistant() async {
+    if (!_orderingEnabled) return;
     final api = widget.assistantApi;
-    if (api == null || !_orderingEnabled) return;
+    if (api == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hỏi Hưng Phát chưa sẵn sàng trên thiết bị này. Vui lòng thử lại sau.',
+          ),
+        ),
+      );
+      return;
+    }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CustomerAssistantScreen(api: api),
@@ -230,7 +240,7 @@ class _AppShellState extends State<AppShell> {
         profile: profile,
         repository: orderingRepository,
         onSelectTab: _selectTab,
-        onOpenAssistant: widget.assistantApi == null ? null : _openAssistant,
+        onOpenAssistant: _openAssistant,
       ),
       1 => ProductCatalogScreen(repository: orderingRepository),
       2 => QuickOrderScreen(repository: orderingRepository),
