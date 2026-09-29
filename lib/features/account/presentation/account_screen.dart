@@ -1,3 +1,4 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_failure.dart';
@@ -393,6 +394,15 @@ class _AccountScreenState extends State<AccountScreen> {
         _editableProfile?.displayName ??
         widget.profile?.displayName ??
         'Khách hàng Hưng Phát';
+    final clerkUser = ClerkAuth.userOf(context);
+    final clerkName = clerkUser?.name.trim() ?? '';
+    final identityName = clerkName.isEmpty ? displayName : clerkName;
+    final identityEmail = clerkUser?.email?.trim() ?? '';
+    final imageUrl = clerkUser?.imageUrl?.trim();
+    final profileImageUrl = clerkUser?.profileImageUrl?.trim();
+    final identityImageUrl = imageUrl?.isNotEmpty == true
+        ? imageUrl
+        : profileImageUrl;
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -405,9 +415,9 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    child: Icon(Icons.person_rounded, size: 30),
+                  _AccountAvatar(
+                    name: identityName,
+                    imageUrl: identityImageUrl,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -415,10 +425,31 @@ class _AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          displayName,
+                          identityName,
                           style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                              ?.copyWith(fontWeight: FontWeight.w900),
                         ),
+                        if (identityEmail.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.mail_outline_rounded,
+                                size: 16,
+                                color: Color(0xFF6C757D),
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  identityEmail,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         if (customerCode.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text('Mã khách Công Ty: $customerCode'),
@@ -426,6 +457,53 @@ class _AccountScreenState extends State<AccountScreen> {
                       ],
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEBF5E9),
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.key_rounded,
+                          color: Color(0xFF0F6B3D),
+                        ),
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Bảo mật & đăng nhập',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 3),
+                            const Text(
+                              'Quản lý ảnh đại diện, tên, email và liên kết Google của tài khoản Clerk.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const ClerkUserButton(showName: true),
                 ],
               ),
             ),
@@ -652,24 +730,6 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.security_outlined),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Đăng nhập và bảo mật được quản lý bởi tài khoản Hưng Phát. Phiên đăng nhập được lưu an toàn trên thiết bị.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
           if (widget.onSignOut != null) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -683,6 +743,57 @@ class _AccountScreenState extends State<AccountScreen> {
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+}
+
+class _AccountAvatar extends StatelessWidget {
+  const _AccountAvatar({required this.name, required this.imageUrl});
+
+  final String name;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim() ?? '';
+    final initial = name.trim().isEmpty
+        ? 'H'
+        : name.trim().characters.first.toUpperCase();
+
+    return Container(
+      width: 58,
+      height: 58,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFEBF5E9),
+        border: Border.all(color: const Color(0xFFD7E4D9), width: 1.5),
+      ),
+      child: url.isEmpty
+          ? Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Color(0xFF0F6B3D),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Center(
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Color(0xFF0F6B3D),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
