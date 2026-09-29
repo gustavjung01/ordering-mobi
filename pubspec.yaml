@@ -24,3 +24,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/catalog/canonical-product-map.json
+    - assets/catalog/r2-product-image-skus.json
