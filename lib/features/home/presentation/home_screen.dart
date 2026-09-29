@@ -76,7 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final content = _homeContent;
     final showManagedBanner =
-        content?.visible == true && content?.bannerUrl?.trim().isNotEmpty == true;
+        content?.visible == true &&
+        content?.bannerUrl?.trim().isNotEmpty == true;
 
     return RefreshIndicator(
       onRefresh: _loadHomeContent,
