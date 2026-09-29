@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_theme.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../../../shared/formatters.dart';
@@ -736,7 +737,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 crossAxisCount: columns,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: .57,
+                mainAxisExtent: 188,
               ),
               itemBuilder: (context, index) {
                 final group = shownGroups[index];
@@ -755,13 +756,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   group: group,
                   selected: selected,
                   metadata: metadata,
-                  retail: _modeItem(metadata, group, selected, 'retail'),
-                  caseItem: _modeItem(metadata, group, selected, 'case'),
                   onOpen: () => _openGroup(group, selected),
-                  onSelect: (item) {
-                    setState(() => _selectedSkuByGroup[group.key] = item.sku);
-                  },
-                  onAdd: () => _add(selected),
                 );
               },
             ),
@@ -794,33 +789,18 @@ class _CatalogFamilyCard extends StatelessWidget {
     required this.group,
     required this.selected,
     required this.metadata,
-    required this.retail,
-    required this.caseItem,
     required this.onOpen,
-    required this.onSelect,
-    required this.onAdd,
   });
 
   final CatalogProductGroup group;
   final CustomerCatalogItem selected;
   final CatalogMetadataIndex metadata;
-  final CustomerCatalogItem? retail;
-  final CustomerCatalogItem? caseItem;
   final VoidCallback onOpen;
-  final ValueChanged<CustomerCatalogItem> onSelect;
-  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    final variants = group.variantLabels(metadata);
-    final sizes = group.sizeLabels(metadata);
-    final subtitle = [
-      metadata.productTypeFor(selected),
-      variants.length > 1
-          ? '${variants.length} vị / loại'
-          : metadata.variantFor(selected),
-      sizes.length > 1 ? '${sizes.length} size' : metadata.sizeFor(selected),
-    ].where((value) => value.isNotEmpty).join(' · ');
+    final hasPrice =
+        selected.price.isAvailable && selected.price.amount != null;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -828,7 +808,7 @@ class _CatalogFamilyCard extends StatelessWidget {
       child: InkWell(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.all(9),
+          padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -836,22 +816,11 @@ class _CatalogFamilyCard extends StatelessWidget {
                 child: CatalogProductVisual(
                   item: selected,
                   metadata: metadata,
-                  size: 108,
-                  borderRadius: 16,
+                  size: 96,
+                  borderRadius: 14,
                 ),
               ),
-              const SizedBox(height: 8),
-              if (metadata.brandFor(selected).isNotEmpty)
-                Text(
-                  metadata.brandFor(selected),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 7),
               Text(
                 group.name,
                 maxLines: 2,
@@ -860,116 +829,20 @@ class _CatalogFamilyCard extends StatelessWidget {
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle.isEmpty ? selected.unitLabel : subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
               const Spacer(),
-              if (metadata.variantFor(selected).isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 5),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    metadata.variantFor(selected),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
               Text(
                 _priceLabel(selected),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: hasPrice
+                      ? AppTheme.brandDark
+                      : const Color(0xFF9A6B00),
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ModeButton(
-                      label: 'Lẻ',
-                      selected: selected.sku == retail?.sku,
-                      enabled: retail != null,
-                      onTap: retail == null ? null : () => onSelect(retail!),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: _ModeButton(
-                      label: 'Thùng',
-                      selected: selected.sku == caseItem?.sku,
-                      enabled: caseItem != null,
-                      onTap: caseItem == null
-                          ? null
-                          : () => onSelect(caseItem!),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  IconButton.filled(
-                    tooltip: 'Thêm vào giỏ',
-                    onPressed: onAdd,
-                    icon: const Icon(Icons.add_shopping_cart_rounded, size: 19),
-                  ),
-                ],
-              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModeButton extends StatelessWidget {
-  const _ModeButton({
-    required this.label,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 34,
-      child: OutlinedButton(
-        onPressed: enabled ? onTap : null,
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: selected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : null,
-          side: BorderSide(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : const Color(0xFFDCE5DE),
-          ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
     );
