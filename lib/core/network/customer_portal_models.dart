@@ -1,3 +1,29 @@
+class CustomerHomeContent {
+  const CustomerHomeContent({
+    required this.sectionTitle,
+    required this.visible,
+    required this.bannerUrl,
+    required this.imagePresent,
+    required this.updatedAt,
+  });
+
+  factory CustomerHomeContent.fromJson(Map<String, dynamic> json) {
+    return CustomerHomeContent(
+      sectionTitle: _string(json, 'sectionTitle'),
+      visible: json['visible'] == true,
+      bannerUrl: _optionalString(json['bannerUrl']),
+      imagePresent: json['imagePresent'] == true,
+      updatedAt: _optionalString(json['updatedAt']),
+    );
+  }
+
+  final String sectionTitle;
+  final bool visible;
+  final String? bannerUrl;
+  final bool imagePresent;
+  final String? updatedAt;
+}
+
 class CustomerProfile {
   const CustomerProfile({
     required this.customerCode,
