@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../../../shared/formatters.dart';
-import '../../cart/presentation/cart_screen.dart';
 import '../../ordering/data/customer_ordering_repository.dart';
 import '../../products/domain/catalog_product_metadata.dart';
 import '../../products/presentation/catalog_product_visual.dart';
@@ -38,6 +37,67 @@ class _HomeScreenState extends State<HomeScreen> {
     'packaging': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-bao-bi.webp',
     'sauce-seasoning': 'https://pub-7d2987fab97d4e3ebb2021a823973862.r2.dev/app-customer/image-system/icon-gia-vi.webp',
   };
+
+  String? _categoryImageUrl(CustomerCategory category) {
+    final direct = _categoryImages[category.id.trim().toLowerCase()];
+    if (direct != null) return direct;
+
+    final label = '${category.name} ${category.shortName}'.toLowerCase();
+    if (label.contains('trà sữa') || label.contains('tra sua')) {
+      return _categoryImages['milk-tea'];
+    }
+    if (label.contains('mì cay') || label.contains('mi cay')) {
+      return _categoryImages['spicy-noodle'];
+    }
+    if (label.contains('đông lạnh') || label.contains('dong lanh')) {
+      return _categoryImages['frozen'];
+    }
+    if (label.contains('ăn vặt') || label.contains('an vat')) {
+      return _categoryImages['snacks'];
+    }
+    if (label.contains('bao bì') || label.contains('bao bi')) {
+      return _categoryImages['packaging'];
+    }
+    if (label.contains('gia vị') ||
+        label.contains('gia vi') ||
+        label.contains('nước sốt') ||
+        label.contains('nuoc sot')) {
+      return _categoryImages['sauce-seasoning'];
+    }
+    return null;
+  }
+
+  int _categoryOrder(CustomerCategory category) {
+    final imageUrl = _categoryImageUrl(category);
+    if (imageUrl == _categoryImages['milk-tea']) return 0;
+    if (imageUrl == _categoryImages['spicy-noodle']) return 1;
+    if (imageUrl == _categoryImages['frozen']) return 2;
+    if (imageUrl == _categoryImages['snacks']) return 3;
+    if (imageUrl == _categoryImages['packaging']) return 4;
+    if (imageUrl == _categoryImages['sauce-seasoning']) return 5;
+    return 99;
+  }
+
+  List<CustomerCategory> get _homeCategories {
+    final roots = _categories
+        .where(
+          (category) =>
+              category.parentCategoryId == null ||
+              category.parentCategoryId!.trim().isEmpty,
+        )
+        .toList(growable: false);
+    final source = roots.isNotEmpty ? roots : _categories;
+    final illustrated = source
+        .where((category) => _categoryImageUrl(category) != null)
+        .toList(growable: false);
+    final result = [...(illustrated.isNotEmpty ? illustrated : source)]
+      ..sort((left, right) {
+        final order = _categoryOrder(left).compareTo(_categoryOrder(right));
+        if (order != 0) return order;
+        return left.shortName.compareTo(right.shortName);
+      });
+    return result;
+  }
 
   List<CustomerOrder> _orders = const [];
   List<CustomerCatalogItem> _products = const [];
@@ -86,12 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openCart() => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => CartScreen(repository: widget.repository),
-    ),
-  );
-
   Future<void> _addProduct(CustomerCatalogItem item) async {
     try {
       await widget.repository.addProduct(item);
@@ -118,19 +172,13 @@ class _HomeScreenState extends State<HomeScreen> {
             _products,
             metadata,
           ).take(6).toList(growable: false);
+    final homeCategories = _homeCategories;
 
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
         children: [
-          _IdentityCard(
-            profile: widget.profile,
-            cartQuantity: widget.repository.cartQuantity,
-            onQuickOrder: () => widget.onSelectTab(2),
-            onCart: _openCart,
-          ),
-          const SizedBox(height: 14),
           _SearchLauncher(onTap: () => widget.onSelectTab(1)),
           const SizedBox(height: 14),
           _HeroBanner(onProducts: () => widget.onSelectTab(1)),
@@ -168,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 18),
             ],
-            if (_categories.isNotEmpty) ...[
+            if (homeCategories.isNotEmpty) ...[
               _SectionHeading(
                 title: 'Ngành hàng',
                 actionLabel: 'Xem tất cả',
@@ -179,13 +227,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 92,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
+                  itemCount: homeCategories.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
-                    final category = _categories[index];
+                    final category = homeCategories[index];
                     return _CategoryCard(
                       category: category,
-                      imageUrl: _categoryImages[category.id],
+                      imageUrl: _categoryImageUrl(category),
                       onTap: () => widget.onSelectTab(1),
                     );
                   },
@@ -221,135 +269,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _IdentityCard extends StatelessWidget {
-  const _IdentityCard({
-    required this.profile,
-    required this.cartQuantity,
-    required this.onQuickOrder,
-    required this.onCart,
-  });
-
-  final CustomerProfile profile;
-  final int cartQuantity;
-  final VoidCallback onQuickOrder;
-  final VoidCallback onCart;
-
-  @override
-  Widget build(BuildContext context) {
-    const greenDark = Color(0xFF0F6B3D);
-    const green = Color(0xFF198754);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [greenDark, green, Color(0xFF3DA16F)],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2E0F6B3D),
-            blurRadius: 28,
-            offset: Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.eco_rounded, color: Color(0xFFFFC107), size: 30),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'HƯNG PHÁT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .2,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0x26FFFFFF),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0x4DFFFFFF)),
-                ),
-                child: const Text(
-                  'Đang hoạt động',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Xin chào, ${profile.displayName}',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            profile.outletName.isEmpty
-                ? 'Mã khách: ${profile.customerCode}'
-                : '${profile.outletName}\nMã khách: ${profile.customerCode}',
-            style: const TextStyle(
-              color: Color(0xE6FFFFFF),
-              height: 1.35,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onQuickOrder,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: greenDark,
-                    minimumSize: const Size.fromHeight(46),
-                  ),
-                  icon: const Icon(Icons.bolt_rounded),
-                  label: const Text('Đặt nhanh'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onCart,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xB3FFFFFF)),
-                    minimumSize: const Size.fromHeight(46),
-                  ),
-                  icon: const Icon(Icons.shopping_cart_outlined),
-                  label: Text(
-                    cartQuantity > 0 ? 'Giỏ hàng ($cartQuantity)' : 'Giỏ hàng',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

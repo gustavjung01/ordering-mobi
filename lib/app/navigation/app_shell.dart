@@ -24,6 +24,7 @@ class AppShell extends StatefulWidget {
     this.accountRepository,
     this.assistantApi,
     this.customerDisplayName,
+    this.accountImageUrl,
     this.onSignOut,
   });
 
@@ -33,6 +34,7 @@ class AppShell extends StatefulWidget {
   final CustomerAccountRepository? accountRepository;
   final CustomerAssistantApi? assistantApi;
   final String? customerDisplayName;
+  final String? accountImageUrl;
   final SignOutCallback? onSignOut;
 
   @override
@@ -200,11 +202,18 @@ class _AppShellState extends State<AppShell> {
         selectedIndex: _index,
         onDestinationSelected: _selectTab,
         destinations: [
-          for (final item in _destinations)
+          for (var index = 0; index < _destinations.length; index++)
             NavigationDestination(
-              icon: Icon(item.icon),
-              selectedIcon: Icon(item.selectedIcon),
-              label: item.label,
+              icon: index == 4
+                  ? _AccountNavAvatar(imageUrl: widget.accountImageUrl)
+                  : Icon(_destinations[index].icon),
+              selectedIcon: index == 4
+                  ? _AccountNavAvatar(
+                      imageUrl: widget.accountImageUrl,
+                      selected: true,
+                    )
+                  : Icon(_destinations[index].selectedIcon),
+              label: _destinations[index].label,
             ),
         ],
       ),
@@ -247,6 +256,51 @@ class _AppShellState extends State<AppShell> {
       3 => OrdersScreen(repository: orderingRepository),
       _ => const SizedBox.shrink(),
     };
+  }
+}
+
+class _AccountNavAvatar extends StatelessWidget {
+  const _AccountNavAvatar({required this.imageUrl, this.selected = false});
+
+  final String? imageUrl;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim() ?? '';
+    final borderColor = selected
+        ? Theme.of(context).colorScheme.primary
+        : const Color(0xFFD0D7D2);
+
+    return Container(
+      width: 28,
+      height: 28,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFEBF5E9),
+        border: Border.all(color: borderColor, width: selected ? 2 : 1),
+      ),
+      child: url.isEmpty
+          ? Icon(
+              selected ? Icons.person_rounded : Icons.person_outline_rounded,
+              size: 19,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : const Color(0xFF6C757D),
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                selected ? Icons.person_rounded : Icons.person_outline_rounded,
+                size: 19,
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : const Color(0xFF6C757D),
+              ),
+            ),
+    );
   }
 }
 
