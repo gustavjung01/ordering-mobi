@@ -24,6 +24,7 @@ class OrderingApp extends StatelessWidget {
       home: runtimeConfig.isReady && customerPortalBaseUri != null
           ? CustomerAuthGate(
               customerPortalBaseUri: customerPortalBaseUri,
+              assistantEndpoint: runtimeConfig.assistantEndpoint,
             )
           : const _ConfigurationRequiredScreen(),
     );

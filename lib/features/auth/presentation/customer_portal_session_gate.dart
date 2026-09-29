@@ -19,10 +19,12 @@ class CustomerPortalSessionGate extends StatefulWidget {
     super.key,
     required this.authClient,
     required this.baseUri,
+    this.assistantEndpoint,
   });
 
   final ClerkCustomerAuthClient authClient;
   final Uri baseUri;
+  final Uri? assistantEndpoint;
 
   @override
   State<CustomerPortalSessionGate> createState() =>
@@ -33,7 +35,7 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
   late final CustomerPortalClient _portalClient;
   late final CustomerPortalApi _portalApi;
   late final CustomerPortalAccountApi _accountApi;
-  late final CustomerAssistantApi _assistantApi;
+  CustomerAssistantApi? _assistantApi;
   late Future<_PortalSessionData> _sessionFuture;
   CustomerOrderingRepository? _orderingRepository;
   CustomerAccountRepository? _accountRepository;
@@ -47,17 +49,20 @@ class _CustomerPortalSessionGateState extends State<CustomerPortalSessionGate> {
     );
     _portalApi = CustomerPortalApi(_portalClient);
     _accountApi = CustomerPortalAccountApi(_portalClient);
-    _assistantApi = CustomerAssistantApi(
-      endpoint: widget.baseUri.resolve('/api/assistant/chat'),
-      tokenProvider: widget.authClient.getToken,
-    );
+    final assistantEndpoint = widget.assistantEndpoint;
+    if (assistantEndpoint != null) {
+      _assistantApi = CustomerAssistantApi(
+        endpoint: assistantEndpoint,
+        tokenProvider: widget.authClient.getToken,
+      );
+    }
     _sessionFuture = _loadSession();
   }
 
   @override
   void dispose() {
     _orderingRepository?.dispose();
-    _assistantApi.close();
+    _assistantApi?.close();
     _portalClient.close();
     super.dispose();
   }
