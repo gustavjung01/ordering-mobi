@@ -1,6 +1,7 @@
 class CustomerHomeContent {
   const CustomerHomeContent({
     required this.sectionTitle,
+    this.programContent = '',
     required this.visible,
     required this.bannerUrl,
     required this.imagePresent,
@@ -10,6 +11,7 @@ class CustomerHomeContent {
   factory CustomerHomeContent.fromJson(Map<String, dynamic> json) {
     return CustomerHomeContent(
       sectionTitle: _string(json, 'sectionTitle'),
+      programContent: _optionalString(json['programContent'])?.trim() ?? '',
       visible: json['visible'] == true,
       bannerUrl: _optionalString(json['bannerUrl']),
       imagePresent: json['imagePresent'] == true,
@@ -18,6 +20,7 @@ class CustomerHomeContent {
   }
 
   final String sectionTitle;
+  final String programContent;
   final bool visible;
   final String? bannerUrl;
   final bool imagePresent;
