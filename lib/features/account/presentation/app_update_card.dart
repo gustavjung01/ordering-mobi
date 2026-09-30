@@ -118,8 +118,7 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
         await _updates.openInstallPermissionSettings();
         if (!mounted) return;
         setState(() {
-          _message =
-              'Bật “Cho phép từ nguồn này”, quay lại Hưng Phát Đặt Hàng rồi bấm Cài bản cập nhật.';
+          _message = 'Bật “Cho phép từ nguồn này”, quay lại Hưng Phát Đặt Hàng rồi bấm Cài bản cập nhật.';
         });
         return;
       }
@@ -127,8 +126,7 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
       await _updates.install(release);
       if (!mounted) return;
       setState(() {
-        _message =
-            'Đã tải và kiểm tra gói cập nhật. Android đang mở màn hình cài đặt.';
+        _message = 'Đã tải và kiểm tra gói cập nhật. Android đang mở màn hình cài đặt.';
       });
     } on AppUpdateFailure catch (failure) {
       if (!mounted) return;
@@ -180,9 +178,10 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
                     children: [
                       Text(
                         'Cập nhật ứng dụng',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
                       ),
                       const SizedBox(height: 3),
                       const Text(
@@ -242,9 +241,7 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
                 _message!,
                 key: const Key('update-message'),
                 style: TextStyle(
-                  color: updateAvailable
-                      ? AppTheme.brandDark
-                      : AppTheme.muted,
+                  color: updateAvailable ? AppTheme.brandDark : AppTheme.muted,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -279,9 +276,7 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
                     )
                   : OutlinedButton.icon(
                       key: const Key('check-update-button'),
-                      onPressed: _checking || _installing
-                          ? null
-                          : _checkUpdate,
+                      onPressed: _checking || _installing ? null : _checkUpdate,
                       icon: _checking
                           ? const SizedBox(
                               width: 18,
@@ -290,9 +285,7 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
                             )
                           : const Icon(Icons.refresh_rounded),
                       label: Text(
-                        _checking
-                            ? 'Đang kiểm tra...'
-                            : 'Kiểm tra cập nhật',
+                        _checking ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật',
                       ),
                     ),
               const SizedBox(height: 16),

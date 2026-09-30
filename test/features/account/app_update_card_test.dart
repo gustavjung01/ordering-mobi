@@ -50,11 +50,9 @@ void main() {
               jsonEncode({
                 'version': '1.0.1',
                 'apk': 'Ordering-1.0.1.apk',
-                'url':
-                    'https://updates.example.vn/ordering/Ordering-1.0.1.apk',
+                'url': 'https://updates.example.vn/ordering/Ordering-1.0.1.apk',
                 'size': 1048576,
-                'sha256':
-                    'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+                'sha256': 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
                 'releaseNotes': 'Cải thiện trải nghiệm đặt hàng.',
               }),
             ),
