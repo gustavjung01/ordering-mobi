@@ -83,8 +83,16 @@ void main() {
       'add_shopping_cart',
       'Thêm thùng vào giỏ',
       'Thêm lẻ vào giỏ',
+      "Key('product-sheet-content')",
+      "Key('product-quantity-row')",
+      "Key('product-add-button')",
+      'backgroundColor: Colors.white',
+      'maxHeight: MediaQuery.sizeOf(context).height * .82',
     ]) {
       expect(sheet, contains(retained), reason: retained);
     }
+
+    expect(sheet, isNot(contains('heightFactor: .9')));
+    expect(sheet, contains('size: 88'));
   });
 }

@@ -383,6 +383,67 @@ class _AccountScreenState extends State<AccountScreen> {
     return values;
   }
 
+  Future<void> _openSecuritySettings() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Bảo mật & đăng nhập',
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Quản lý tên, email, ảnh đại diện và tài khoản liên kết.',
+                style: TextStyle(color: Color(0xFF6C757D)),
+              ),
+              const SizedBox(height: 18),
+              const ClerkUserButton(showName: true),
+              const SizedBox(height: 18),
+              FilledButton(
+                key: const Key('security-settings-done'),
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                child: const Text('Xong'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openUpdateSettings() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .82,
+          ),
+          child: const SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(18, 0, 18, 20),
+            child: AppUpdateCard(embedded: true),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final copy = _stateCopy(widget.lifecycle.state);
@@ -463,54 +524,10 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEBF5E9),
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                        child: const Icon(
-                          Icons.key_rounded,
-                          color: Color(0xFF0F6B3D),
-                        ),
-                      ),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bảo mật & đăng nhập',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w900),
-                            ),
-                            const SizedBox(height: 3),
-                            const Text(
-                              'Quản lý ảnh đại diện, tên, email và liên kết Google của tài khoản Clerk.',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  const ClerkUserButton(showName: true),
-                ],
-              ),
-            ),
+          _SettingsCard(
+            onSecurityTap: _openSecuritySettings,
+            onUpdateTap: _openUpdateSettings,
           ),
-          const SizedBox(height: 12),
-          const AppUpdateCard(),
           const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -745,6 +762,115 @@ class _AccountScreenState extends State<AccountScreen> {
           ],
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    required this.onSecurityTap,
+    required this.onUpdateTap,
+  });
+
+  final VoidCallback onSecurityTap;
+  final VoidCallback onUpdateTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const Key('settings-card'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+            child: Text(
+              'Thiết lập',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          _SettingsRow(
+            key: const Key('security-settings-row'),
+            icon: Icons.lock_outline_rounded,
+            title: 'Bảo mật & đăng nhập',
+            subtitle: 'Tên, email và tài khoản liên kết',
+            onTap: onSecurityTap,
+          ),
+          const Divider(height: 1, indent: 66),
+          _SettingsRow(
+            key: const Key('update-settings-row'),
+            icon: Icons.system_update_alt_rounded,
+            title: 'Cập nhật ứng dụng',
+            subtitle: 'Phiên bản và cập nhật mới',
+            onTap: onUpdateTap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F7F3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: const Color(0xFF0F6B3D), size: 21),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF6C757D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF8A938C),
+            ),
+          ],
+        ),
       ),
     );
   }

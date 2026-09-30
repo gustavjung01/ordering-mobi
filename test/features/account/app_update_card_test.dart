@@ -110,12 +110,18 @@ void main() {
     },
   );
 
-  test('AccountScreen hiển thị card cập nhật trong mục Tài khoản', () {
+  test('Tài khoản gom bảo mật và cập nhật vào card Thiết lập', () {
     final source = File(
       'lib/features/account/presentation/account_screen.dart',
     ).readAsStringSync();
 
     expect(source, contains("import 'app_update_card.dart';"));
-    expect(source, contains('const AppUpdateCard()'));
+    expect(source, contains("Key('settings-card')"));
+    expect(source, contains("Key('security-settings-row')"));
+    expect(source, contains("Key('update-settings-row')"));
+    expect(source, contains('_openSecuritySettings'));
+    expect(source, contains('_openUpdateSettings'));
+    expect(source, contains('AppUpdateCard(embedded: true)'));
+    expect(source, isNot(contains('const AppUpdateCard(),')));
   });
 }
