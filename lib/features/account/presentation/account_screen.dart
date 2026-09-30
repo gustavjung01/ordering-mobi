@@ -5,6 +5,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/network/customer_portal_account_models.dart';
 import '../../../core/network/customer_portal_models.dart';
 import '../data/customer_account_repository.dart';
+import 'app_update_card.dart';
 
 typedef SignOutCallback = Future<void> Function();
 
@@ -508,6 +509,8 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          const AppUpdateCard(),
           const SizedBox(height: 12),
           Card(
             child: Padding(
