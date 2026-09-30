@@ -31,4 +31,36 @@ void main() {
       throwsA(isA<AppUpdateFailure>()),
     );
   });
+
+  test('manifest rejects APK outside configured update base', () {
+    final hash = List.filled(64, '0').join();
+    expect(
+      () => AppReleaseManifest.fromJson(
+        {
+          'version': '1.0.0',
+          'url': 'https://cdn.example.test/Ordering-1.0.0.apk',
+          'sha256': hash,
+        },
+        baseUri: Uri.parse('https://example.test/ordering/'),
+      ),
+      throwsA(isA<AppUpdateFailure>()),
+    );
+  });
+
+  test('manifest accepts APK under configured update base', () {
+    final hash = List.filled(64, '0').join();
+    final manifest = AppReleaseManifest.fromJson(
+      {
+        'version': '1.0.0',
+        'url': 'https://example.test/ordering/Ordering-1.0.0.apk',
+        'sha256': hash,
+      },
+      baseUri: Uri.parse('https://example.test/ordering/'),
+    );
+
+    expect(
+      manifest.downloadUrl,
+      Uri.parse('https://example.test/ordering/Ordering-1.0.0.apk'),
+    );
+  });
 }

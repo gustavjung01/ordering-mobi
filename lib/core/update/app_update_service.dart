@@ -50,6 +50,7 @@ class AppReleaseManifest {
 
     if (!_isStrictVersion(version) ||
         downloadUrl.scheme != 'https' ||
+        !_isWithinUpdateBase(downloadUrl, baseUri) ||
         sha256.length != 64 ||
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(sha256)) {
       throw const AppUpdateFailure(
@@ -295,6 +296,16 @@ List<int> _versionParts(String value) {
 
 bool _isStrictVersion(String value) =>
     RegExp(r'^\d+\.\d+\.\d+$').hasMatch(value.trim());
+
+bool _isWithinUpdateBase(Uri downloadUrl, Uri baseUri) {
+  final normalizedBasePath = baseUri.path.endsWith('/')
+      ? baseUri.path
+      : '${baseUri.path}/';
+  return downloadUrl.scheme.toLowerCase() == baseUri.scheme.toLowerCase() &&
+      downloadUrl.host.toLowerCase() == baseUri.host.toLowerCase() &&
+      downloadUrl.port == baseUri.port &&
+      downloadUrl.path.startsWith(normalizedBasePath);
+}
 
 AppUpdateFailure _platformFailure(PlatformException error) {
   switch (error.code) {

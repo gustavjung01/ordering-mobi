@@ -7,6 +7,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$CanonicalUpdateBaseUrl = "https://pub-381648426a2447a7a5edd970ca02d14e.r2.dev/ordering"
+
 $version = $env:KM_RELEASE_VERSION
 if ([string]::IsNullOrWhiteSpace($version)) {
     throw "KM_RELEASE_VERSION is required."
@@ -36,6 +38,13 @@ function Remove-OuterQuotes([string]$Value) {
 
 $Flutter = Remove-OuterQuotes $Flutter
 $UpdateBaseUrl = (Remove-OuterQuotes $UpdateBaseUrl).TrimEnd("/")
+if (-not [string]::Equals(
+    $UpdateBaseUrl,
+    $CanonicalUpdateBaseUrl,
+    [StringComparison]::OrdinalIgnoreCase
+)) {
+    throw "UpdateBaseUrl must match the Ordering Key Manager public update base: $CanonicalUpdateBaseUrl"
+}
 
 $requiredSigningVariables = @(
     "ORDERING_ANDROID_KEYSTORE",
@@ -78,6 +87,20 @@ $releaseConfigPath = Join-Path $PSScriptRoot "..\release-config.json"
 $releaseConfig = Get-Content -LiteralPath $releaseConfigPath -Raw | ConvertFrom-Json
 if ($releaseConfig.version -ne $version) {
     throw "release-config.json version $($releaseConfig.version) does not match KM_RELEASE_VERSION $version."
+}
+
+$pubspecPath = Join-Path $PSScriptRoot "..\pubspec.yaml"
+$pubspecContent = Get-Content -LiteralPath $pubspecPath -Raw
+$pubspecVersionMatch = [regex]::Match(
+    $pubspecContent,
+    '(?m)^\s*version:\s*(\d+\.\d+\.\d+)(?:\+\d+)?\s*$'
+)
+if (-not $pubspecVersionMatch.Success) {
+    throw "pubspec.yaml must contain a semantic version in the form major.minor.patch with an optional build number."
+}
+$pubspecVersionName = $pubspecVersionMatch.Groups[1].Value
+if ($pubspecVersionName -ne $version) {
+    throw "pubspec.yaml version $pubspecVersionName does not match KM_RELEASE_VERSION $version."
 }
 
 $parts = $version.Split(".")
