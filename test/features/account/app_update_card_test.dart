@@ -76,7 +76,7 @@ void main() {
       expect(find.text('1.0.0'), findsOneWidget);
       expect(find.byKey(const Key('check-update-button')), findsOneWidget);
       expect(find.byKey(const Key('update-install-guide')), findsOneWidget);
-      expect(find.textContaining('Hưng Phát Đặt Hàng'), findsWidgets);
+      expect(find.text('Kiểm tra và cài phiên bản mới.'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('check-update-button')));
       await tester.pumpAndSettle();

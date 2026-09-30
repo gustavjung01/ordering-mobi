@@ -299,7 +299,6 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
     }
     return Card(key: const Key('app-update-card'), child: content);
   }
-
 }
 
 class _UpdateInfoRow extends StatelessWidget {
