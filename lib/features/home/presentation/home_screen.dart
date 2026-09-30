@@ -72,6 +72,78 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openEventDetails(CustomerHomeContent content) async {
+    final programContent = content.programContent.trim();
+    if (programContent.isEmpty || !mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .82,
+          ),
+          child: SingleChildScrollView(
+            key: const Key('event-detail-sheet'),
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AspectRatio(
+                  aspectRatio: 3.6,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(17),
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEEF3EF),
+                      ),
+                      child: Image.network(
+                        content.bannerUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  content.sectionTitle,
+                  key: const Key('event-detail-title'),
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  programContent,
+                  key: const Key('event-detail-content'),
+                  style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                    height: 1.55,
+                    color: const Color(0xFF3F4A42),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  key: const Key('event-detail-close'),
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final content = _homeContent;
@@ -117,7 +189,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (showManagedBanner) ...[
             const SizedBox(height: 20),
-            _ManagedHomeBanner(content: content!),
+            _ManagedHomeBanner(
+              content: content!,
+              onTap: content.programContent.trim().isEmpty
+                  ? null
+                  : () => _openEventDetails(content),
+            ),
           ],
         ],
       ),
@@ -544,9 +621,13 @@ class _CategoryFallback extends StatelessWidget {
 }
 
 class _ManagedHomeBanner extends StatelessWidget {
-  const _ManagedHomeBanner({required this.content});
+  const _ManagedHomeBanner({
+    required this.content,
+    required this.onTap,
+  });
 
   final CustomerHomeContent content;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -560,17 +641,29 @@ class _ManagedHomeBanner extends StatelessWidget {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
-        AspectRatio(
-          aspectRatio: 3.6,
-          child: ClipRRect(
+        Semantics(
+          button: onTap != null,
+          label: onTap == null
+              ? content.sectionTitle
+              : '${content.sectionTitle}. Mở chi tiết chương trình',
+          child: Material(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(17),
-            child: DecoratedBox(
-              decoration: const BoxDecoration(color: Color(0xFFEEF3EF)),
-              child: Image.network(
-                content.bannerUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const SizedBox.shrink(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              key: const Key('managed-event-banner'),
+              onTap: onTap,
+              child: AspectRatio(
+                aspectRatio: 3.6,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(color: Color(0xFFEEF3EF)),
+                  child: Image.network(
+                    content.bannerUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox.shrink(),
+                  ),
+                ),
               ),
             ),
           ),
