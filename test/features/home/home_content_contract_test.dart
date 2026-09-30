@@ -21,17 +21,20 @@ void main() {
     expect(content.bannerUrl, contains('banner.webp'));
   });
 
-  test('CustomerHomeContent tương thích payload cũ chưa có nội dung chương trình', () {
-    final content = CustomerHomeContent.fromJson({
-      'sectionTitle': 'Sự kiện',
-      'visible': true,
-      'bannerUrl': 'https://example.test/banner.webp?v=2',
-      'imagePresent': true,
-      'updatedAt': '2026-09-29T12:00:00.000Z',
-    });
+  test(
+    'CustomerHomeContent tương thích payload cũ chưa có nội dung chương trình',
+    () {
+      final content = CustomerHomeContent.fromJson({
+        'sectionTitle': 'Sự kiện',
+        'visible': true,
+        'bannerUrl': 'https://example.test/banner.webp?v=2',
+        'imagePresent': true,
+        'updatedAt': '2026-09-29T12:00:00.000Z',
+      });
 
-    expect(content.programContent, isEmpty);
-  });
+      expect(content.programContent, isEmpty);
+    },
+  );
 
   test('Trang chủ có đủ sáu ảnh ngành hàng và không còn card sản phẩm', () {
     final source = File(
