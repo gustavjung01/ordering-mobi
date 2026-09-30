@@ -7,9 +7,11 @@ class AppUpdateCard extends StatefulWidget {
   const AppUpdateCard({
     super.key,
     this.updateService,
+    this.embedded = false,
   });
 
   final AppUpdateService? updateService;
+  final bool embedded;
 
   @override
   State<AppUpdateCard> createState() => _AppUpdateCardState();
@@ -148,196 +150,154 @@ class _AppUpdateCardState extends State<AppUpdateCard> {
     final updateAvailable = _check?.updateAvailable == true;
     final directInstallSupported = _directInstallSupported == true;
 
-    return Card(
-      key: const Key('app-update-card'),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppTheme.brandSoft,
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: const Icon(
-                    Icons.system_update_alt_rounded,
-                    color: AppTheme.brandDark,
-                  ),
+    final content = Padding(
+      padding: widget.embedded ? EdgeInsets.zero : const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F7F3),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Cập nhật ứng dụng',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'Kiểm tra và cài phiên bản Hưng Phát Đặt Hàng mới nhất.',
-                      ),
-                    ],
-                  ),
+                child: const Icon(
+                  Icons.system_update_alt_rounded,
+                  color: AppTheme.brandDark,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _UpdateInfoRow(
-              label: 'Bản đang dùng',
-              value: _currentVersion,
-            ),
-            if (_directInstallSupported == false) ...[
-              const Divider(height: 24),
-              const Text(
-                'Thiết bị này không hỗ trợ cập nhật trực tiếp trong ứng dụng.',
-                key: Key('update-unsupported-message'),
-                style: TextStyle(color: AppTheme.muted),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cập nhật ứng dụng',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Kiểm tra và cài phiên bản mới.',
+                      style: TextStyle(color: AppTheme.muted),
+                    ),
+                  ],
+                ),
               ),
             ],
-            if (directInstallSupported && release != null) ...[
-              const Divider(height: 24),
+          ),
+          const SizedBox(height: 18),
+          _UpdateInfoRow(label: 'Bản đang dùng', value: _currentVersion),
+          if (_directInstallSupported == false) ...[
+            const Divider(height: 24),
+            const Text(
+              'Thiết bị này không hỗ trợ cập nhật trực tiếp trong ứng dụng.',
+              key: Key('update-unsupported-message'),
+              style: TextStyle(color: AppTheme.muted),
+            ),
+          ],
+          if (directInstallSupported && release != null) ...[
+            const Divider(height: 24),
+            _UpdateInfoRow(label: 'Bản phát hành', value: release.version),
+            if (release.size > 0) ...[
+              const SizedBox(height: 10),
               _UpdateInfoRow(
-                label: 'Bản phát hành',
-                value: release.version,
+                label: 'Dung lượng',
+                value: _formatBytes(release.size),
               ),
-              if (release.size > 0) ...[
-                const Divider(height: 24),
-                _UpdateInfoRow(
-                  label: 'Dung lượng',
-                  value: _formatBytes(release.size),
-                ),
-              ],
+            ],
+            if (release.releaseNotes.trim().isNotEmpty) ...[
               const SizedBox(height: 14),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.canvas,
+                  color: const Color(0xFFF7F9F7),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   release.releaseNotes,
-                  style: const TextStyle(
-                    color: AppTheme.muted,
-                    height: 1.4,
-                  ),
+                  style: const TextStyle(color: AppTheme.muted, height: 1.4),
                 ),
-              ),
-            ],
-            if ((_message ?? '').isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Text(
-                _message!,
-                key: const Key('update-message'),
-                style: TextStyle(
-                  color: updateAvailable ? AppTheme.brandDark : AppTheme.muted,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-            if (_directInstallSupported == null) ...[
-              const SizedBox(height: 14),
-              const LinearProgressIndicator(minHeight: 2),
-            ],
-            if (directInstallSupported) ...[
-              const SizedBox(height: 14),
-              updateAvailable
-                  ? FilledButton.icon(
-                      key: const Key('install-update-button'),
-                      onPressed: _installing || _checking
-                          ? null
-                          : _installUpdate,
-                      icon: _installing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.download_for_offline_outlined),
-                      label: Text(
-                        _installing
-                            ? 'Đang tải bản cập nhật...'
-                            : 'Tải và cài bản ${release!.version}',
-                      ),
-                    )
-                  : OutlinedButton.icon(
-                      key: const Key('check-update-button'),
-                      onPressed: _checking || _installing ? null : _checkUpdate,
-                      icon: _checking
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.refresh_rounded),
-                      label: Text(
-                        _checking ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật',
-                      ),
-                    ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 14),
-              const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.help_outline_rounded,
-                    color: AppTheme.brandDark,
-                    size: 20,
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      'Nếu Android yêu cầu quyền cài ứng dụng từ nguồn này, hãy bật quyền cho Hưng Phát Đặt Hàng rồi quay lại bấm cài lần nữa.',
-                      key: Key('update-install-guide'),
-                      style: TextStyle(
-                        color: AppTheme.muted,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.verified_user_outlined,
-                    color: AppTheme.brandDark,
-                    size: 20,
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      'Ứng dụng kiểm tra gói cập nhật trước khi mở trình cài đặt Android.',
-                      style: TextStyle(
-                        color: AppTheme.muted,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ],
-        ),
+          if ((_message ?? '').isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              _message!,
+              key: const Key('update-message'),
+              style: TextStyle(
+                color: updateAvailable ? AppTheme.brandDark : AppTheme.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (_directInstallSupported == null) ...[
+            const SizedBox(height: 14),
+            const LinearProgressIndicator(minHeight: 2),
+          ],
+          if (directInstallSupported) ...[
+            const SizedBox(height: 16),
+            updateAvailable
+                ? FilledButton.icon(
+                    key: const Key('install-update-button'),
+                    onPressed: _installing || _checking ? null : _installUpdate,
+                    icon: _installing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.download_for_offline_outlined),
+                    label: Text(
+                      _installing
+                          ? 'Đang tải bản cập nhật...'
+                          : 'Tải và cài bản ${release!.version}',
+                    ),
+                  )
+                : OutlinedButton.icon(
+                    key: const Key('check-update-button'),
+                    onPressed: _checking || _installing ? null : _checkUpdate,
+                    icon: _checking
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
+                    label: Text(
+                      _checking ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật',
+                    ),
+                  ),
+            const SizedBox(height: 12),
+            const Text(
+              'Gói cập nhật được kiểm tra trước khi mở trình cài đặt Android.',
+              key: Key('update-install-guide'),
+              style: TextStyle(
+                color: AppTheme.muted,
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
       ),
     );
+
+    if (widget.embedded) {
+      return content;
+    }
+    return Card(key: const Key('app-update-card'), child: content);
   }
 }
 

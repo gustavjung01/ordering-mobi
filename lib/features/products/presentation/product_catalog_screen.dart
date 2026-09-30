@@ -340,6 +340,10 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -363,208 +367,221 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               setState(() => _selectedSkuByGroup[group.key] = item.sku);
             }
 
-            return FractionallySizedBox(
-              heightFactor: .9,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CatalogProductVisual(
-                        item: selected,
-                        metadata: metadata,
-                        size: 116,
-                        borderRadius: 20,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (metadata.brandFor(selected).isNotEmpty)
-                              Text(
-                                metadata.brandFor(selected).toUpperCase(),
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
-                            const SizedBox(height: 4),
-                            Text(
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * .82,
+              ),
+              child: SingleChildScrollView(
+                key: const Key('product-sheet-content'),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CatalogProductVisual(
+                          item: selected,
+                          metadata: metadata,
+                          size: 88,
+                          borderRadius: 16,
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(
                               group.name,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              selected.name,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (variants.length > 1) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Vị / loại',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final variant in variants)
-                          Builder(
-                            builder: (context) {
-                              final option = _chooseVariant(
-                                metadata,
-                                activeGroup,
-                                variant,
-                                selected,
-                              );
-                              final active = variant == selectedVariant;
-                              return OutlinedButton(
-                                onPressed: () => selectProduct(option),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: active
-                                      ? Theme.of(
-                                          context,
-                                        ).colorScheme.primaryContainer
-                                      : null,
-                                  side: BorderSide(
-                                    color: active
-                                        ? Theme.of(context).colorScheme.primary
-                                        : const Color(0xFFDCE5DE),
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.15,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 11,
-                                    vertical: 9,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      variant,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      _priceLabel(option),
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.labelSmall,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                            ),
                           ),
+                        ),
                       ],
                     ),
-                  ],
-                  if (sizes.length > 1) ...[
-                    const SizedBox(height: 18),
-                    Text(
-                      'Dung tích / size',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    if (variants.length > 1) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        'Vị / loại',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final size in sizes)
-                          ChoiceChip(
-                            selected: metadata.sizeFor(selected) == size,
-                            label: Text(size),
-                            onSelected: (_) => selectProduct(
-                              _chooseSize(
-                                metadata,
-                                variantProducts,
-                                size,
-                                selected,
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: [
+                          for (final variant in variants)
+                            Builder(
+                              builder: (context) {
+                                final option = _chooseVariant(
+                                  metadata,
+                                  activeGroup,
+                                  variant,
+                                  selected,
+                                );
+                                final active = variant == selectedVariant;
+                                return OutlinedButton(
+                                  onPressed: () => selectProduct(option),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: active
+                                        ? AppTheme.brandDark
+                                        : AppTheme.ink,
+                                    backgroundColor: active
+                                        ? AppTheme.brandSoft
+                                        : Colors.white,
+                                    side: BorderSide(
+                                      color: active
+                                          ? AppTheme.brand
+                                          : AppTheme.border,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 7,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        variant,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        _priceLabel(option),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: active
+                                                  ? AppTheme.brandDark
+                                                  : AppTheme.muted,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                    if (sizes.length > 1) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        'Dung tích / size',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: [
+                          for (final size in sizes)
+                            ChoiceChip(
+                              selected: metadata.sizeFor(selected) == size,
+                              showCheckmark: false,
+                              selectedColor: AppTheme.brandSoft,
+                              backgroundColor: Colors.white,
+                              side: BorderSide(
+                                color: metadata.sizeFor(selected) == size
+                                    ? AppTheme.brand
+                                    : AppTheme.border,
+                              ),
+                              label: Text(size),
+                              onSelected: (_) => selectProduct(
+                                _chooseSize(
+                                  metadata,
+                                  variantProducts,
+                                  size,
+                                  selected,
+                                ),
                               ),
                             ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Text(
+                      'Giá bán',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ModePriceBox(
+                            label: 'Mua lẻ',
+                            item: retail,
+                            selected: selected.purchaseMode == 'retail',
+                            onTap: retail == null
+                                ? null
+                                : () => selectProduct(retail),
                           ),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: _ModePriceBox(
+                            label: 'Mua thùng',
+                            item: caseItem,
+                            selected: selected.purchaseMode == 'case',
+                            onTap: caseItem == null
+                                ? null
+                                : () => selectProduct(caseItem),
+                          ),
+                        ),
                       ],
                     ),
-                  ],
-                  const SizedBox(height: 20),
-                  Text(
-                    'Giá bán',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ModePriceBox(
-                          label: 'Mua lẻ',
-                          item: retail,
-                          selected: selected.purchaseMode == 'retail',
-                          onTap: retail == null
-                              ? null
-                              : () => selectProduct(retail),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ModePriceBox(
-                          label: 'Mua thùng',
-                          item: caseItem,
-                          selected: selected.purchaseMode == 'case',
-                          onTap: caseItem == null
-                              ? null
-                              : () => selectProduct(caseItem),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      _QuantityStepper(
-                        quantity: quantity,
-                        onChanged: (value) {
-                          setSheetState(() => quantity = value);
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () async {
-                            await _add(selected, quantity: quantity);
-                            if (sheetContext.mounted) {
-                              Navigator.of(sheetContext).pop();
-                            }
-                          },
-                          icon: const Icon(Icons.add_shopping_cart_rounded),
-                          label: Text(
-                            selected.purchaseMode == 'case'
-                                ? 'Thêm thùng vào giỏ'
-                                : 'Thêm lẻ vào giỏ',
+                    const SizedBox(height: 14),
+                    Row(
+                      key: const Key('product-quantity-row'),
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Số lượng',
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                         ),
+                        _QuantityStepper(
+                          quantity: quantity,
+                          onChanged: (value) {
+                            setSheetState(() => quantity = value);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const Key('product-add-button'),
+                      onPressed: () async {
+                        await _add(selected, quantity: quantity);
+                        if (sheetContext.mounted) {
+                          Navigator.of(sheetContext).pop();
+                        }
+                      },
+                      icon: const Icon(Icons.add_shopping_cart_rounded),
+                      label: Text(
+                        selected.purchaseMode == 'case'
+                            ? 'Thêm thùng vào giỏ'
+                            : 'Thêm lẻ vào giỏ',
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -870,14 +887,10 @@ class _ModePriceBox extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : const Color(0xFFF5F7F5),
+          color: selected ? AppTheme.brandSoft : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : const Color(0xFFDDE5DE),
+            color: selected ? AppTheme.brand : AppTheme.border,
           ),
         ),
         child: Column(
@@ -891,7 +904,7 @@ class _ModePriceBox extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 color: item == null
                     ? Theme.of(context).disabledColor
-                    : Theme.of(context).colorScheme.primary,
+                    : AppTheme.brandDark,
               ),
             ),
           ],
@@ -913,9 +926,10 @@ class _QuantityStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      height: 40,
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFDCE5DE)),
+        color: Colors.white,
+        border: Border.all(color: AppTheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -923,15 +937,23 @@ class _QuantityStepper extends StatelessWidget {
         children: [
           IconButton(
             tooltip: 'Giảm số lượng',
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 38, height: 38),
             onPressed: quantity <= 1 ? null : () => onChanged(quantity - 1),
             icon: const Icon(Icons.remove_rounded, size: 18),
           ),
-          Text(
-            '$quantity',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+          SizedBox(
+            width: 30,
+            child: Text(
+              '$quantity',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
           ),
           IconButton(
             tooltip: 'Tăng số lượng',
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 38, height: 38),
             onPressed: quantity >= 99 ? null : () => onChanged(quantity + 1),
             icon: const Icon(Icons.add_rounded, size: 18),
           ),
