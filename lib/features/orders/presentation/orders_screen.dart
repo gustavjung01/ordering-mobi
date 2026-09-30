@@ -195,18 +195,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) return _purchasedProducts;
 
-    return _purchasedProducts.where((item) {
-      final product = item.product;
-      return [
-        item.sku,
-        item.latestLine.productName,
-        item.latestLine.packaging,
-        item.latestLine.unit,
-        product?.name ?? '',
-        product?.variantName ?? '',
-        product?.brandName ?? '',
-      ].join(' ').toLowerCase().contains(query);
-    }).toList(growable: false);
+    return _purchasedProducts
+        .where((item) {
+          final product = item.product;
+          return [
+            item.sku,
+            item.latestLine.productName,
+            item.latestLine.packaging,
+            item.latestLine.unit,
+            product?.name ?? '',
+            product?.variantName ?? '',
+            product?.brandName ?? '',
+          ].join(' ').toLowerCase().contains(query);
+        })
+        .toList(growable: false);
   }
 
   Future<void> _openOrder(CustomerOrder order) async {
