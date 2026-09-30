@@ -234,7 +234,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Đã thêm \${purchased.latestLine.quantity} \${product.unitLabel} vào giỏ.',
+            'Đã thêm ${purchased.latestLine.quantity} ${product.unitLabel} vào giỏ.',
           ),
         ),
       );
@@ -422,10 +422,10 @@ class _PurchasedProductCard extends StatelessWidget {
         ? formatVnd(price!.amount!)
         : purchased.latestLine.unitPrice == null
         ? 'Chờ xác nhận giá'
-        : 'Giá lần gần nhất \${formatVnd(purchased.latestLine.unitPrice!)}';
+        : 'Giá lần gần nhất ${formatVnd(purchased.latestLine.unitPrice!)}';
 
     return Card(
-      key: ValueKey('purchased-product-\${purchased.sku}'),
+      key: ValueKey('purchased-product-${purchased.sku}'),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -486,7 +486,7 @@ class _PurchasedProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Lần gần nhất: \${purchased.latestLine.quantity} \$unit · \${formatDateTime(purchased.latestAt)}',
+                    'Lần gần nhất: ${purchased.latestLine.quantity} $unit · ${formatDateTime(purchased.latestAt)}',
                     style: const TextStyle(
                       color: Color(0xFF6C757D),
                       fontSize: 11.5,
@@ -496,7 +496,7 @@ class _PurchasedProductCard extends StatelessWidget {
                   SizedBox(
                     height: 36,
                     child: FilledButton.icon(
-                      key: ValueKey('reorder-product-\${purchased.sku}'),
+                      key: ValueKey('reorder-product-${purchased.sku}'),
                       onPressed: onReorder,
                       icon: const Icon(Icons.replay_rounded, size: 18),
                       label: Text(
@@ -548,7 +548,7 @@ class _OrderCard extends StatelessWidget {
               Text(formatDateTime(order.submittedAt)),
               const SizedBox(height: 10),
               Text(
-                '\${order.lines.length} mặt hàng · \${order.totalQuantity} đơn vị',
+                '${order.lines.length} mặt hàng · ${order.totalQuantity} đơn vị',
               ),
               const SizedBox(height: 4),
               Text(
